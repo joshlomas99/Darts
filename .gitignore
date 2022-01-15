@@ -1,0 +1,4 @@
+__pycache__
+opencv-steel-darts*
+Pictures/*
+!Pictures/Blank*
