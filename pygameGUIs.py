@@ -1,10 +1,58 @@
-import time, os
-import numpy as np
+import time, os, random
+import tkinter as tk
 import pygame
 from pygame.locals import QUIT
 from pygame.color import THECOLORS as colors
 
 os.environ['SDL_VIDEO_WINDOW_POS'] = "384,200"
+
+def movableWindow():
+    
+    w, h = 400, 500
+    
+    # Tkinter Stuffs
+    root = tk.Tk()
+    embed = tk.Frame(root, width=w, height=h)
+    embed.pack()
+    
+    os.environ['SDL_WINDOWID'] = str(embed.winfo_id())
+    os.environ['SDL_VIDEODRIVER'] = 'windib' # This was needed to work on my windows machine.
+    
+    root.update()
+    
+    # Pygame Stuffs
+    pygame.display.init()
+    screen = pygame.display.set_mode((w, h))
+    
+    # This just gets the size of your screen (assuming the screen isn't affected by display scaling).
+    screen_full_size = pygame.display.list_modes()[0]
+    
+    # Basic Pygame loop
+    done = False
+    while not done:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                done = True
+    
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    done = True
+    
+                if event.key == pygame.K_SPACE:
+                    # Press space to move the window to a random location.
+                    r_w = random.randint(0, screen_full_size[0])
+                    r_h = random.randint(0, screen_full_size[1])
+                    root.geometry("+"+str(r_w)+"+"+str(r_h))
+    
+        # Set to green just so we know when it is finished loading.
+        screen.fill((0, 220, 0))
+    
+        pygame.display.flip()
+    
+        root.update()
+    
+    pygame.quit()
+    root.destroy()
 
 def gradientRect(window, top_colour, bottom_colour, target_rect):
     colour_rect = pygame.Surface((2, 2))
@@ -392,8 +440,8 @@ def drawMenu(window, players, addingPlayer=False):
 
     pygame.display.flip()
 
-    return [play_button_size, play_text_rect_obj_center, quit_button_size, quit_text_rect_obj_center,
-            addPlayer_button_size, addPlayer_text_rect_obj_center]
+    return [play_button_size, play_text_rect_obj_center, addPlayer_button_size, addPlayer_text_rect_obj_center,
+            quit_button_size, quit_text_rect_obj_center]
 
 def menuTest():
     pygame.init()
@@ -415,8 +463,8 @@ def menuTest():
 
     buttons = drawMenu(window, players)
     play_button_size, play_text_rect_obj_center = buttons[0], buttons[1]
-    quit_button_size, quit_text_rect_obj_center = buttons[2], buttons[3]
-    addPlayer_button_size, addPlayer_text_rect_obj_center = buttons[4], buttons[5]
+    addPlayer_button_size, addPlayer_text_rect_obj_center = buttons[2], buttons[3]
+    quit_button_size, quit_text_rect_obj_center = buttons[4], buttons[5]
 
     while True:
         x, y = pygame.mouse.get_pos()
@@ -447,7 +495,7 @@ def menuTest():
                     
                 if len(players) < 6 and abs(x - addPlayer_text_rect_obj_center[0]) <= addPlayer_button_size[0] and abs(y - addPlayer_text_rect_obj_center[1]) <= addPlayer_button_size[1]:
                     buttons = drawMenu(window, players, True)
-                    players.append(addPlayer(window, buttons[4], players))
+                    players.append(addPlayer(window, buttons[2], players))
 
                 if abs(x - quit_text_rect_obj_center[0]) <= quit_button_size[0] and abs(y - quit_text_rect_obj_center[1]) <= quit_button_size[1]:
                     print('Quit')
@@ -555,14 +603,14 @@ def addPlayerTest():
                     
                 if abs(x - addPlayer_text_rect_obj_center[0]) <= addPlayer_button_size[0] and abs(y - addPlayer_text_rect_obj_center[1]) <= addPlayer_button_size[1]:
                     buttons = drawMenu(window, players, True)
-                    players.append(addPlayer(window, buttons[4], players))
+                    players.append(addPlayer(window, buttons[2], players))
 
                 if abs(x - quit_text_rect_obj_center[0]) <= quit_button_size[0] and abs(y - quit_text_rect_obj_center[1]) <= quit_button_size[1]:
                     print('Quit')
                     pygame.quit()
                     return
 
-def drawGameMenu(window, players, addingPlayer=False):
+def drawGameMenu(window, players):
     window.fill([255,255,255])
     gradientRect( window, (0, 204, 51), (0, 255, 128), pygame.Rect( 0, 0, *window.get_size() ) )
 
@@ -586,33 +634,29 @@ def drawGameMenu(window, players, addingPlayer=False):
     draw_diamond(window, colors['white'], [window.get_size()[0]/2 - title_text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], radius)
     draw_diamond(window, colors['white'], [window.get_size()[0]/2 + title_text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], radius)
 
-    play_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
-    play_text_surface_obj = play_font_obj.render('Play', True, colors['white'])
-    play_text_rect_obj = play_text_surface_obj.get_rect()
-    play_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.2)
-    play_text_rect_obj.center = play_text_rect_obj_center
-    play_button_size = 1*play_text_rect_obj.size
-    window.blit(play_text_surface_obj, play_text_rect_obj)
+    demolition_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
+    demolition_text_surface_obj = demolition_font_obj.render('Demolition', True, colors['white'])
+    demolition_text_rect_obj = demolition_text_surface_obj.get_rect()
+    demolition_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.2)
+    demolition_text_rect_obj.center = demolition_text_rect_obj_center
+    demolition_button_size = 1*demolition_text_rect_obj.size
+    window.blit(demolition_text_surface_obj, demolition_text_rect_obj)
 
-    addPlayer_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
-    if len(players) < 6:
-        addPlayer_text_surface_obj = addPlayer_font_obj.render('Add Player', True, colors['white'])
-    else:
-        addPlayer_text_surface_obj = addPlayer_font_obj.render('Add Player', True, colors['red'])
-    addPlayer_text_rect_obj = addPlayer_text_surface_obj.get_rect()
-    addPlayer_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.35)
-    addPlayer_text_rect_obj.center = addPlayer_text_rect_obj_center
-    addPlayer_button_size = 1*addPlayer_text_rect_obj.size
-    if not addingPlayer:
-        window.blit(addPlayer_text_surface_obj, addPlayer_text_rect_obj)
+    killer_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
+    killer_text_surface_obj = killer_font_obj.render('Killer', True, colors['white'])
+    killer_text_rect_obj = killer_text_surface_obj.get_rect()
+    killer_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.35)
+    killer_text_rect_obj.center = killer_text_rect_obj_center
+    killer_button_size = 1*killer_text_rect_obj.size
+    window.blit(killer_text_surface_obj, killer_text_rect_obj)
 
-    quit_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
-    quit_text_surface_obj = quit_font_obj.render('Quit', True, colors['white'])
-    quit_text_rect_obj = quit_text_surface_obj.get_rect()
-    quit_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.7)
-    quit_text_rect_obj.center = quit_text_rect_obj_center
-    quit_button_size = quit_text_rect_obj.size
-    window.blit(quit_text_surface_obj, quit_text_rect_obj)
+    back_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
+    back_text_surface_obj = back_font_obj.render('Back', True, colors['white'])
+    back_text_rect_obj = back_text_surface_obj.get_rect()
+    back_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.7)
+    back_text_rect_obj.center = back_text_rect_obj_center
+    back_button_size = back_text_rect_obj.size
+    window.blit(back_text_surface_obj, back_text_rect_obj)
 
     playerColors = [colors['red'], colors['blue'], colors['green'], colors['yellow'], colors['cyan'], colors['orange']]
     for i in range(len(players)):
@@ -621,8 +665,8 @@ def drawGameMenu(window, players, addingPlayer=False):
 
     pygame.display.flip()
 
-    return [play_button_size, play_text_rect_obj_center, quit_button_size, quit_text_rect_obj_center,
-            addPlayer_button_size, addPlayer_text_rect_obj_center]
+    return [demolition_button_size, demolition_text_rect_obj_center, killer_button_size, killer_text_rect_obj_center,
+            back_button_size, back_text_rect_obj_center]
 
 def gameMenuTest():
     pygame.init()
@@ -642,10 +686,10 @@ def gameMenuTest():
 
     window = pygame.display.set_mode((info.current_w/2, (info.current_h-60)/2))
 
-    buttons = drawMenu(window, players)
-    play_button_size, play_text_rect_obj_center = buttons[0], buttons[1]
-    quit_button_size, quit_text_rect_obj_center = buttons[2], buttons[3]
-    addPlayer_button_size, addPlayer_text_rect_obj_center = buttons[4], buttons[5]
+    buttons = drawGameMenu(window, players)
+    demolition_button_size, demolition_text_rect_obj_center = buttons[0], buttons[1]
+    killer_button_size, killer_text_rect_obj_center = buttons[2], buttons[3]
+    back_button_size, back_text_rect_obj_center = buttons[4], buttons[5]
 
     while True:
         x, y = pygame.mouse.get_pos()
@@ -653,14 +697,14 @@ def gameMenuTest():
 
         drawGameMenu(window, players)
 
-        if abs(x - play_text_rect_obj_center[0]) <= play_button_size[0] and abs(y - play_text_rect_obj_center[1]) <= play_button_size[1]:
-            pygame.draw.line(window, colors['white'], [play_text_rect_obj_center[0] - play_button_size[0]/2, play_text_rect_obj_center[1] + play_button_size[1]/2], [play_text_rect_obj_center[0] + play_button_size[0]/2, play_text_rect_obj_center[1] + play_button_size[1]/2], width=3)
+        if abs(x - demolition_text_rect_obj_center[0]) <= demolition_button_size[0] and abs(y - demolition_text_rect_obj_center[1]) <= demolition_button_size[1]:
+            pygame.draw.line(window, colors['white'], [demolition_text_rect_obj_center[0] - demolition_button_size[0]/2, demolition_text_rect_obj_center[1] + demolition_button_size[1]/2], [demolition_text_rect_obj_center[0] + demolition_button_size[0]/2, demolition_text_rect_obj_center[1] + demolition_button_size[1]/2], width=3)
 
-        if len(players) < 6 and abs(x - addPlayer_text_rect_obj_center[0]) <= addPlayer_button_size[0] and abs(y - addPlayer_text_rect_obj_center[1]) <= addPlayer_button_size[1]:
-            pygame.draw.line(window, colors['white'], [addPlayer_text_rect_obj_center[0] - addPlayer_button_size[0]/2, addPlayer_text_rect_obj_center[1] + addPlayer_button_size[1]/2], [addPlayer_text_rect_obj_center[0] + addPlayer_button_size[0]/2, addPlayer_text_rect_obj_center[1] + addPlayer_button_size[1]/2], width=3)
+        if len(players) < 6 and abs(x - killer_text_rect_obj_center[0]) <= killer_button_size[0] and abs(y - killer_text_rect_obj_center[1]) <= killer_button_size[1]:
+            pygame.draw.line(window, colors['white'], [killer_text_rect_obj_center[0] - killer_button_size[0]/2, killer_text_rect_obj_center[1] + killer_button_size[1]/2], [killer_text_rect_obj_center[0] + killer_button_size[0]/2, killer_text_rect_obj_center[1] + killer_button_size[1]/2], width=3)
 
-        if abs(x - quit_text_rect_obj_center[0]) <= quit_button_size[0] and abs(y - quit_text_rect_obj_center[1]) <= quit_button_size[1]:
-            pygame.draw.line(window, colors['white'], [quit_text_rect_obj_center[0] - quit_button_size[0]/2, quit_text_rect_obj_center[1] + quit_button_size[1]/2], [quit_text_rect_obj_center[0] + quit_button_size[0]/2, quit_text_rect_obj_center[1] + quit_button_size[1]/2], width=3)
+        if abs(x - back_text_rect_obj_center[0]) <= back_button_size[0] and abs(y - back_text_rect_obj_center[1]) <= back_button_size[1]:
+            pygame.draw.line(window, colors['white'], [back_text_rect_obj_center[0] - back_button_size[0]/2, back_text_rect_obj_center[1] + back_button_size[1]/2], [back_text_rect_obj_center[0] + back_button_size[0]/2, back_text_rect_obj_center[1] + back_button_size[1]/2], width=3)
 
         pygame.display.flip()
 
@@ -671,14 +715,119 @@ def gameMenuTest():
                 return
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if abs(x - play_text_rect_obj_center[0]) <= play_button_size[0] and abs(y - play_text_rect_obj_center[1]) <= play_button_size[1]:
-                    print('Play!')
+                if abs(x - demolition_text_rect_obj_center[0]) <= demolition_button_size[0] and abs(y - demolition_text_rect_obj_center[1]) <= demolition_button_size[1]:
+                    print('Demolition')
                     
-                if len(players) < 6 and abs(x - addPlayer_text_rect_obj_center[0]) <= addPlayer_button_size[0] and abs(y - addPlayer_text_rect_obj_center[1]) <= addPlayer_button_size[1]:
-                    buttons = drawGameMenu(window, players, True)
-                    players.append(addPlayer(window, buttons[4], players))
+                if len(players) < 6 and abs(x - killer_text_rect_obj_center[0]) <= killer_button_size[0] and abs(y - killer_text_rect_obj_center[1]) <= killer_button_size[1]:
+                    print('Killer')
 
-                if abs(x - quit_text_rect_obj_center[0]) <= quit_button_size[0] and abs(y - quit_text_rect_obj_center[1]) <= quit_button_size[1]:
-                    print('Quit')
+                if abs(x - back_text_rect_obj_center[0]) <= back_button_size[0] and abs(y - back_text_rect_obj_center[1]) <= back_button_size[1]:
+                    print('Back')
+                    return window
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    print('Back')
+                    return window
+
+def multiMenuTest():
+    pygame.init()
+    
+    FPS = 30 #frames per second setting
+    fpsClock = pygame.time.Clock()
+
+    info = pygame.display.Info()
+
+    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
+    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren']
+    # players = ['Josh', 'Ben', 'Luke', 'Rachel']
+    # players = ['Josh', 'Ben', 'Luke']
+    # players = ['Josh', 'Ben']
+    # players = ['Josh']
+    players = []
+
+    window = pygame.display.set_mode((info.current_w/2, (info.current_h-60)/2))
+
+    buttons = drawMenu(window, players)
+    play_button_size, play_text_rect_obj_center = buttons[0], buttons[1]
+    addPlayer_button_size, addPlayer_text_rect_obj_center = buttons[2], buttons[3]
+    quit_button_size, quit_text_rect_obj_center = buttons[4], buttons[5]
+
+    menu = 'main'
+
+    while True:
+        if menu == 'main':
+            x, y = pygame.mouse.get_pos()
+            pygame.display.set_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
+    
+            drawMenu(window, players)
+    
+            if abs(x - play_text_rect_obj_center[0]) <= play_button_size[0] and abs(y - play_text_rect_obj_center[1]) <= play_button_size[1]:
+                pygame.draw.line(window, colors['white'], [play_text_rect_obj_center[0] - play_button_size[0]/2, play_text_rect_obj_center[1] + play_button_size[1]/2], [play_text_rect_obj_center[0] + play_button_size[0]/2, play_text_rect_obj_center[1] + play_button_size[1]/2], width=3)
+    
+            if len(players) < 6 and abs(x - addPlayer_text_rect_obj_center[0]) <= addPlayer_button_size[0] and abs(y - addPlayer_text_rect_obj_center[1]) <= addPlayer_button_size[1]:
+                pygame.draw.line(window, colors['white'], [addPlayer_text_rect_obj_center[0] - addPlayer_button_size[0]/2, addPlayer_text_rect_obj_center[1] + addPlayer_button_size[1]/2], [addPlayer_text_rect_obj_center[0] + addPlayer_button_size[0]/2, addPlayer_text_rect_obj_center[1] + addPlayer_button_size[1]/2], width=3)
+    
+            if abs(x - quit_text_rect_obj_center[0]) <= quit_button_size[0] and abs(y - quit_text_rect_obj_center[1]) <= quit_button_size[1]:
+                pygame.draw.line(window, colors['white'], [quit_text_rect_obj_center[0] - quit_button_size[0]/2, quit_text_rect_obj_center[1] + quit_button_size[1]/2], [quit_text_rect_obj_center[0] + quit_button_size[0]/2, quit_text_rect_obj_center[1] + quit_button_size[1]/2], width=3)
+    
+            pygame.display.flip()
+    
+            fpsClock.tick(FPS)
+            for event in pygame.event.get():
+                if event.type == QUIT:
                     pygame.quit()
                     return
+    
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if abs(x - play_text_rect_obj_center[0]) <= play_button_size[0] and abs(y - play_text_rect_obj_center[1]) <= play_button_size[1]:
+                        menu = 'play'
+                        
+                    if len(players) < 6 and abs(x - addPlayer_text_rect_obj_center[0]) <= addPlayer_button_size[0] and abs(y - addPlayer_text_rect_obj_center[1]) <= addPlayer_button_size[1]:
+                        buttons = drawMenu(window, players, True)
+                        players.append(addPlayer(window, buttons[2], players))
+    
+                    if abs(x - quit_text_rect_obj_center[0]) <= quit_button_size[0] and abs(y - quit_text_rect_obj_center[1]) <= quit_button_size[1]:
+                        print('Quit')
+                        pygame.quit()
+                        return
+
+        if menu == 'play':
+            x, y = pygame.mouse.get_pos()
+            pygame.display.set_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
+    
+            buttons = drawGameMenu(window, players)
+            demolition_button_size, demolition_text_rect_obj_center = buttons[0], buttons[1]
+            killer_button_size, killer_text_rect_obj_center = buttons[2], buttons[3]
+            back_button_size, back_text_rect_obj_center = buttons[4], buttons[5]
+
+            if abs(x - demolition_text_rect_obj_center[0]) <= demolition_button_size[0] and abs(y - demolition_text_rect_obj_center[1]) <= demolition_button_size[1]:
+                pygame.draw.line(window, colors['white'], [demolition_text_rect_obj_center[0] - demolition_button_size[0]/2, demolition_text_rect_obj_center[1] + demolition_button_size[1]/2], [demolition_text_rect_obj_center[0] + demolition_button_size[0]/2, demolition_text_rect_obj_center[1] + demolition_button_size[1]/2], width=3)
+    
+            if len(players) < 6 and abs(x - killer_text_rect_obj_center[0]) <= killer_button_size[0] and abs(y - killer_text_rect_obj_center[1]) <= killer_button_size[1]:
+                pygame.draw.line(window, colors['white'], [killer_text_rect_obj_center[0] - killer_button_size[0]/2, killer_text_rect_obj_center[1] + killer_button_size[1]/2], [killer_text_rect_obj_center[0] + killer_button_size[0]/2, killer_text_rect_obj_center[1] + killer_button_size[1]/2], width=3)
+    
+            if abs(x - back_text_rect_obj_center[0]) <= back_button_size[0] and abs(y - back_text_rect_obj_center[1]) <= back_button_size[1]:
+                pygame.draw.line(window, colors['white'], [back_text_rect_obj_center[0] - back_button_size[0]/2, back_text_rect_obj_center[1] + back_button_size[1]/2], [back_text_rect_obj_center[0] + back_button_size[0]/2, back_text_rect_obj_center[1] + back_button_size[1]/2], width=3)
+    
+            pygame.display.flip()
+    
+            fpsClock.tick(FPS)
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    return
+    
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if abs(x - demolition_text_rect_obj_center[0]) <= demolition_button_size[0] and abs(y - demolition_text_rect_obj_center[1]) <= demolition_button_size[1]:
+                        print('Demolition')
+                        
+                    if len(players) < 6 and abs(x - killer_text_rect_obj_center[0]) <= killer_button_size[0] and abs(y - killer_text_rect_obj_center[1]) <= killer_button_size[1]:
+                        print('Killer')
+    
+                    if abs(x - back_text_rect_obj_center[0]) <= back_button_size[0] and abs(y - back_text_rect_obj_center[1]) <= back_button_size[1]:
+                        menu = 'main'
+    
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        menu = 'main'
