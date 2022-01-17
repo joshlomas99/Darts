@@ -1,4 +1,4 @@
-import sys, os
+import os
 import matplotlib.pyplot as plt
 import pygame
 from pygame.locals import QUIT
