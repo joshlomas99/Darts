@@ -343,13 +343,13 @@ def textWithOutline(window, text, fontsize, centre, color, outline_color=None, o
 
     return text_size
 
-def drawBorders(window, title, margin, radius):
+def drawBorders(window, title, margin, radius, color, outline_color=None):
     title_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/50))
     title_text_surface_obj = title_font_obj.render(title, True, colors['white'])
     title_text_rect_obj = title_text_surface_obj.get_rect()
-    title_text_rect_obj.center = (window.get_size()[0]/2, max(window.get_size())*margin)
-
-    window.blit(title_text_surface_obj, title_text_rect_obj)
+    title_text_rect_obj_center = (window.get_size()[0]/2, max(window.get_size())*margin)
+    textWithOutline(window, 'Demolition', int(window.get_size()[0]/50), title_text_rect_obj_center, color,
+                    outline_color, 2)
 
     pygame.draw.line(window, colors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0]/2 - title_text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
     pygame.draw.line(window, colors['white'], [window.get_size()[0]/2 + title_text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0] - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
@@ -368,7 +368,7 @@ def drawMenu(window, players, addingPlayer=False):
     margin = 0.02
     radius = window.get_size()[0]/200
 
-    drawBorders(window, 'Darts', margin, radius)
+    drawBorders(window, 'Darts', margin, radius, colors['white'])
 
     play_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.2)
     if len(players) > 0:
@@ -456,31 +456,19 @@ def drawGameMenu(window, players):
     margin = 0.02
     radius = window.get_size()[0]/200
 
-    drawBorders(window, 'Play', margin, radius)
+    drawBorders(window, 'Play', margin, radius, colors['white'])
 
-    demolition_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
-    demolition_text_surface_obj = demolition_font_obj.render('Demolition', True, colors['white'])
-    demolition_text_rect_obj = demolition_text_surface_obj.get_rect()
     demolition_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.2)
-    demolition_text_rect_obj.center = demolition_text_rect_obj_center
-    demolition_button_size = 1*demolition_text_rect_obj.size
-    window.blit(demolition_text_surface_obj, demolition_text_rect_obj)
+    demolition_button_size = textWithOutline(window, 'Demolition', int(window.get_size()[0]/30),
+                                             demolition_text_rect_obj_center, colors['white'], colors['black'], 2)
 
-    killer_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
-    killer_text_surface_obj = killer_font_obj.render('Killer', True, colors['white'])
-    killer_text_rect_obj = killer_text_surface_obj.get_rect()
     killer_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.35)
-    killer_text_rect_obj.center = killer_text_rect_obj_center
-    killer_button_size = 1*killer_text_rect_obj.size
-    window.blit(killer_text_surface_obj, killer_text_rect_obj)
+    killer_button_size = textWithOutline(window, 'Killer', int(window.get_size()[0]/30),
+                                         killer_text_rect_obj_center, colors['white'], colors['black'], 2)
 
-    back_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
-    back_text_surface_obj = back_font_obj.render('Back', True, colors['white'])
-    back_text_rect_obj = back_text_surface_obj.get_rect()
     back_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.7)
-    back_text_rect_obj.center = back_text_rect_obj_center
-    back_button_size = back_text_rect_obj.size
-    window.blit(back_text_surface_obj, back_text_rect_obj)
+    back_button_size = textWithOutline(window, 'Back', int(window.get_size()[0]/30),
+                                       back_text_rect_obj_center, colors['white'], colors['black'], 2)
 
     playerColors = [colors['red'], colors['blue'], colors['green'], colors['yellow'], colors['cyan'], colors['orange']]
     for i in range(len(players)):
@@ -508,7 +496,7 @@ def multiMenuTest():
     # players = ['Josh']
     players = []
 
-    window = pygame.display.set_mode((info.current_w/2, (info.current_h-60)/2))
+    window = pygame.display.set_mode((info.current_w/2, info.current_h/2), pygame.RESIZABLE)
 
     buttons = drawMenu(window, players)
     play_button_size, play_text_rect_obj_center = buttons[0], buttons[1]
@@ -523,7 +511,11 @@ def multiMenuTest():
             x, y = pygame.mouse.get_pos()
             pygame.display.set_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
     
-            crossDims = drawMenu(window, players)[6]
+            buttons = drawMenu(window, players)
+            play_button_size, play_text_rect_obj_center = buttons[0], buttons[1]
+            addPlayer_button_size, addPlayer_text_rect_obj_center = buttons[2], buttons[3]
+            quit_button_size, quit_text_rect_obj_center = buttons[4], buttons[5]
+            crossDims = buttons[6]
             mouse_on_cross = []
 
             for crossCentre, crossRadius in crossDims:
@@ -570,6 +562,9 @@ def multiMenuTest():
                         pygame.quit()
                         return
 
+                elif event.type == pygame.VIDEORESIZE:
+                    window = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+
         if menu == 'play':
             x, y = pygame.mouse.get_pos()
             pygame.display.set_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
@@ -613,6 +608,9 @@ def multiMenuTest():
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         menu = 'main'
+
+                elif event.type == pygame.VIDEORESIZE:
+                    window = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
 def resizeTest():
     pygame.init()
