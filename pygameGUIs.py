@@ -4,7 +4,11 @@ from pygame.locals import QUIT
 from pygame.color import THECOLORS as colors
 colors['clear'] = (0, 0, 0, 0)
 
-os.environ['SDL_VIDEO_WINDOW_POS'] = "384,200"
+# os.environ['SDL_VIDEO_WINDOW_POS'] = "384,200"
+# os.environ['SDL_VIDEO_WINDOW_POS'] = "0,30"
+# os.environ['SDL_VIDEO_CENTERED'] = '1'
+maximised_res = (1536, 801)
+maximised_pos = "0,20"
 
 def blankTestFunction():
     pygame.init()
@@ -496,7 +500,10 @@ def multiMenuTest():
     # players = ['Josh']
     players = []
 
-    window = pygame.display.set_mode((info.current_w/2, info.current_h/2), pygame.RESIZABLE)
+    # window = pygame.display.set_mode((0, 0), pygame.RESIZABLE, pygame.FULLSCREEN)
+    fullscreen = False
+    os.environ['SDL_VIDEO_WINDOW_POS'] = maximised_pos
+    window = pygame.display.set_mode(maximised_res, pygame.RESIZABLE)
 
     buttons = drawMenu(window, players)
     play_button_size, play_text_rect_obj_center = buttons[0], buttons[1]
@@ -544,6 +551,7 @@ def multiMenuTest():
             fpsClock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == QUIT:
+                    print(window.get_size())
                     pygame.quit()
                     return
     
@@ -559,8 +567,23 @@ def multiMenuTest():
                         players.pop(mouse_on_cross.index(True))
 
                     if mouse_on_quit:
+                        print(window.get_size())
                         pygame.quit()
                         return
+
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_F11:
+                        if fullscreen:
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = maximised_pos
+                            pygame.display.init()
+                            window = pygame.display.set_mode(maximised_res, pygame.RESIZABLE)
+                        else:
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
+                            pygame.display.init()
+                            window = pygame.display.set_mode((info.current_w, info.current_h), pygame.RESIZABLE)
+                        fullscreen = not fullscreen
 
                 elif event.type == pygame.VIDEORESIZE:
                     window = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
@@ -608,6 +631,18 @@ def multiMenuTest():
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         menu = 'main'
+                    if event.key == pygame.K_F11:
+                        if fullscreen:
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = maximised_pos
+                            pygame.display.init()
+                            window = pygame.display.set_mode(maximised_res, pygame.RESIZABLE)
+                        else:
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
+                            pygame.display.init()
+                            window = pygame.display.set_mode((info.current_w, info.current_h), pygame.RESIZABLE)
+                        fullscreen = not fullscreen
 
                 elif event.type == pygame.VIDEORESIZE:
                     window = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
