@@ -347,12 +347,26 @@ def textWithOutline(window, text, fontsize, centre, color, outline_color=None, o
 
     return text_size
 
+def lineWithOutline(window, centre, width, thickness, color, outline_color=None, outline_thickness=2, direction='horizontal'):
+    if direction == 'horizontal':
+        if outline_color != None:
+            for dx, dy in _circlepoints(outline_thickness):
+                point_left, point_right = [centre[0] - width/2 + dx + 1, centre[1] + dy - 1], [centre[0] + width/2 + dx + 1, centre[1] + dy - 1]
+                pygame.draw.line(window, outline_color, point_left, point_right, thickness)
+        
+        point_left, point_right = [centre[0] - width/2, centre[1]], [centre[0] + width/2, centre[1]]
+        pygame.draw.line(window, color, point_left, point_right, thickness)
+
+def underlineWithOutline(window, text_rect_obj_center, button_size, thickness, color, outline_color=None, outline_thickness=2, direction='horizontal'):
+    if direction == 'horizontal':
+        lineWithOutline(window, [text_rect_obj_center[0], text_rect_obj_center[1] + button_size[1]/1.5], button_size[0], thickness, color, outline_color, outline_thickness)
+
 def drawBorders(window, title, margin, radius, color, outline_color=None):
     title_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/50))
     title_text_surface_obj = title_font_obj.render(title, True, colors['white'])
     title_text_rect_obj = title_text_surface_obj.get_rect()
     title_text_rect_obj_center = (window.get_size()[0]/2, max(window.get_size())*margin)
-    textWithOutline(window, 'Demolition', int(window.get_size()[0]/50), title_text_rect_obj_center, color,
+    textWithOutline(window, title, int(window.get_size()[0]/50), title_text_rect_obj_center, color,
                     outline_color, 2)
 
     pygame.draw.line(window, colors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0]/2 - title_text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
@@ -390,7 +404,11 @@ def drawMenu(window, players, addingPlayer=False):
         addPlayer_button_size = textWithOutline(window, 'Add Player', int(window.get_size()[0]/30),
                                                 addPlayer_text_rect_obj_center, colors['red'], colors['red'], 2, not addingPlayer)
 
-    quit_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.7)
+    settings_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.5)
+    settings_button_size = textWithOutline(window, 'Settings', int(window.get_size()[0]/30),
+                                       settings_text_rect_obj_center, colors['white'], colors['black'], 2)
+
+    quit_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.8)
     quit_button_size = textWithOutline(window, 'Quit', int(window.get_size()[0]/30),
                                        quit_text_rect_obj_center, colors['white'], colors['black'], 2)
 
@@ -406,7 +424,8 @@ def drawMenu(window, players, addingPlayer=False):
     pygame.display.flip()
 
     return [play_button_size, play_text_rect_obj_center, addPlayer_button_size, addPlayer_text_rect_obj_center,
-            quit_button_size, quit_text_rect_obj_center, crossDims]
+            settings_button_size, settings_text_rect_obj_center, quit_button_size, quit_text_rect_obj_center,
+            crossDims]
 
 def addPlayer(window, addPlayer_button_size, players):
     font = pygame.font.Font(None, int(window.get_size()[0]/30))
@@ -470,7 +489,7 @@ def drawGameMenu(window, players):
     killer_button_size = textWithOutline(window, 'Killer', int(window.get_size()[0]/30),
                                          killer_text_rect_obj_center, colors['white'], colors['black'], 2)
 
-    back_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.7)
+    back_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.8)
     back_button_size = textWithOutline(window, 'Back', int(window.get_size()[0]/30),
                                        back_text_rect_obj_center, colors['white'], colors['black'], 2)
 
@@ -483,6 +502,27 @@ def drawGameMenu(window, players):
 
     return [demolition_button_size, demolition_text_rect_obj_center, killer_button_size, killer_text_rect_obj_center,
             back_button_size, back_text_rect_obj_center]
+
+def drawSettingsMenu(window):
+    window.fill([255,255,255])
+    gradientRect( window, (80, 80, 80), (180, 180, 180), pygame.Rect( 0, 0, *window.get_size() ) )
+
+    margin = 0.02
+    radius = window.get_size()[0]/200
+
+    drawBorders(window, 'Settings', margin, radius, colors['white'])
+
+    video_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.2)
+    video_button_size = textWithOutline(window, 'Video Settings', int(window.get_size()[0]/30),
+                                             video_text_rect_obj_center, colors['white'], colors['black'], 2)
+
+    back_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.8)
+    back_button_size = textWithOutline(window, 'Back', int(window.get_size()[0]/30),
+                                       back_text_rect_obj_center, colors['white'], colors['black'], 2)
+
+    pygame.display.flip()
+
+    return [video_button_size, video_text_rect_obj_center, back_button_size, back_text_rect_obj_center]
 
 def multiMenuTest():
     pygame.init()
@@ -508,12 +548,14 @@ def multiMenuTest():
     buttons = drawMenu(window, players)
     play_button_size, play_text_rect_obj_center = buttons[0], buttons[1]
     addPlayer_button_size, addPlayer_text_rect_obj_center = buttons[2], buttons[3]
-    quit_button_size, quit_text_rect_obj_center = buttons[4], buttons[5]
-    crossDims = buttons[6]
+    settings_button_size, settings_text_rect_obj_center = buttons[4], buttons[5]
+    quit_button_size, quit_text_rect_obj_center = buttons[6], buttons[7]
+    crossDims = buttons[8]
 
     menu = 'main'
 
     while True:
+        underline_thickness = 2*(int(max(window.get_size())/500) + 1)
         if menu == 'main':
             x, y = pygame.mouse.get_pos()
             pygame.display.set_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
@@ -521,8 +563,9 @@ def multiMenuTest():
             buttons = drawMenu(window, players)
             play_button_size, play_text_rect_obj_center = buttons[0], buttons[1]
             addPlayer_button_size, addPlayer_text_rect_obj_center = buttons[2], buttons[3]
-            quit_button_size, quit_text_rect_obj_center = buttons[4], buttons[5]
-            crossDims = buttons[6]
+            settings_button_size, settings_text_rect_obj_center = buttons[4], buttons[5]
+            quit_button_size, quit_text_rect_obj_center = buttons[6], buttons[7]
+            crossDims = buttons[8]
             mouse_on_cross = []
 
             for crossCentre, crossRadius in crossDims:
@@ -533,17 +576,25 @@ def multiMenuTest():
                     drawCross(window, crossCentre, crossRadius, colors['white'], colors['black'])
                     mouse_on_cross.append(False)
 
-            mouse_on_play, mouse_on_addPlayer, mouse_on_quit = False, False, False
+            mouse_on_play, mouse_on_addPlayer, mouse_on_settings, mouse_on_quit = False, False, False, False
             if len(players) > 0 and abs(x - play_text_rect_obj_center[0]) <= play_button_size[0] and abs(y - play_text_rect_obj_center[1]) <= play_button_size[1]:
-                pygame.draw.line(window, colors['white'], [play_text_rect_obj_center[0] - play_button_size[0]/2, play_text_rect_obj_center[1] + play_button_size[1]/2], [play_text_rect_obj_center[0] + play_button_size[0]/2, play_text_rect_obj_center[1] + play_button_size[1]/2], width=3)
+                underlineWithOutline(window, play_text_rect_obj_center, play_button_size, underline_thickness,
+                                     colors['white'], colors['black'], 2)
                 mouse_on_play = True
     
             if len(players) < 6 and abs(x - addPlayer_text_rect_obj_center[0]) <= addPlayer_button_size[0] and abs(y - addPlayer_text_rect_obj_center[1]) <= addPlayer_button_size[1]:
-                pygame.draw.line(window, colors['white'], [addPlayer_text_rect_obj_center[0] - addPlayer_button_size[0]/2, addPlayer_text_rect_obj_center[1] + addPlayer_button_size[1]/2], [addPlayer_text_rect_obj_center[0] + addPlayer_button_size[0]/2, addPlayer_text_rect_obj_center[1] + addPlayer_button_size[1]/2], width=3)
+                underlineWithOutline(window, addPlayer_text_rect_obj_center, addPlayer_button_size,
+                                     underline_thickness, colors['white'], colors['black'], 2)
                 mouse_on_addPlayer = True
     
+            if abs(x - settings_text_rect_obj_center[0]) <= settings_button_size[0] and abs(y - settings_text_rect_obj_center[1]) <= settings_button_size[1]:
+                underlineWithOutline(window, settings_text_rect_obj_center, settings_button_size, underline_thickness,
+                                     colors['white'], colors['black'], 2)
+                mouse_on_settings = True
+    
             if abs(x - quit_text_rect_obj_center[0]) <= quit_button_size[0] and abs(y - quit_text_rect_obj_center[1]) <= quit_button_size[1]:
-                pygame.draw.line(window, colors['white'], [quit_text_rect_obj_center[0] - quit_button_size[0]/2, quit_text_rect_obj_center[1] + quit_button_size[1]/2], [quit_text_rect_obj_center[0] + quit_button_size[0]/2, quit_text_rect_obj_center[1] + quit_button_size[1]/2], width=3)
+                underlineWithOutline(window, quit_text_rect_obj_center, quit_button_size, underline_thickness,
+                                     colors['white'], colors['black'], 2)
                 mouse_on_quit = True
     
             pygame.display.flip()
@@ -551,7 +602,6 @@ def multiMenuTest():
             fpsClock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == QUIT:
-                    print(window.get_size())
                     pygame.quit()
                     return
     
@@ -563,15 +613,71 @@ def multiMenuTest():
                         buttons = drawMenu(window, players, True)
                         players += addPlayer(window, buttons[2], players)
 
+                    if mouse_on_settings:
+                        menu = 'settings'
+
                     if any(mouse_on_cross):
                         players.pop(mouse_on_cross.index(True))
 
                     if mouse_on_quit:
-                        print(window.get_size())
                         pygame.quit()
                         return
 
                 elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_F11:
+                        if fullscreen:
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = maximised_pos
+                            pygame.display.init()
+                            window = pygame.display.set_mode(maximised_res, pygame.RESIZABLE)
+                        else:
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
+                            pygame.display.init()
+                            window = pygame.display.set_mode((info.current_w, info.current_h), pygame.RESIZABLE)
+                        fullscreen = not fullscreen
+
+                elif event.type == pygame.VIDEORESIZE:
+                    window = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+
+        if menu == 'settings':
+            x, y = pygame.mouse.get_pos()
+            pygame.display.set_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
+    
+            buttons = drawSettingsMenu(window)
+            video_button_size, video_text_rect_obj_center = buttons[0], buttons[1]
+            back_button_size, back_text_rect_obj_center = buttons[2], buttons[3]
+
+            mouse_on_video, mouse_on_back = False, False
+            if abs(x - video_text_rect_obj_center[0]) <= video_button_size[0] and abs(y - video_text_rect_obj_center[1]) <= video_button_size[1]:
+                underlineWithOutline(window, video_text_rect_obj_center, video_button_size, underline_thickness,
+                                     colors['white'], colors['black'], 2)
+                mouse_on_video = True
+    
+            if abs(x - back_text_rect_obj_center[0]) <= back_button_size[0] and abs(y - back_text_rect_obj_center[1]) <= back_button_size[1]:
+                underlineWithOutline(window, back_text_rect_obj_center, back_button_size, underline_thickness,
+                                     colors['white'], colors['black'], 2)
+                mouse_on_back = True
+    
+            pygame.display.flip()
+    
+            fpsClock.tick(FPS)
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    return
+    
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if mouse_on_video:
+                        print('video')
+    
+                    if mouse_on_back:
+                        menu = 'main'
+    
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        menu = 'main'
+
                     if event.key == pygame.K_F11:
                         if fullscreen:
                             pygame.display.quit()
@@ -599,15 +705,18 @@ def multiMenuTest():
 
             mouse_on_demolition, mouse_on_killer, mouse_on_back = False, False, False
             if abs(x - demolition_text_rect_obj_center[0]) <= demolition_button_size[0] and abs(y - demolition_text_rect_obj_center[1]) <= demolition_button_size[1]:
-                pygame.draw.line(window, colors['white'], [demolition_text_rect_obj_center[0] - demolition_button_size[0]/2, demolition_text_rect_obj_center[1] + demolition_button_size[1]/2], [demolition_text_rect_obj_center[0] + demolition_button_size[0]/2, demolition_text_rect_obj_center[1] + demolition_button_size[1]/2], width=3)
+                underlineWithOutline(window, demolition_text_rect_obj_center, demolition_button_size, underline_thickness,
+                                     colors['white'], colors['black'], 2)
                 mouse_on_demolition = True
     
             if len(players) < 6 and abs(x - killer_text_rect_obj_center[0]) <= killer_button_size[0] and abs(y - killer_text_rect_obj_center[1]) <= killer_button_size[1]:
-                pygame.draw.line(window, colors['white'], [killer_text_rect_obj_center[0] - killer_button_size[0]/2, killer_text_rect_obj_center[1] + killer_button_size[1]/2], [killer_text_rect_obj_center[0] + killer_button_size[0]/2, killer_text_rect_obj_center[1] + killer_button_size[1]/2], width=3)
+                underlineWithOutline(window, killer_text_rect_obj_center, killer_button_size, underline_thickness,
+                                     colors['white'], colors['black'], 2)
                 mouse_on_killer = True
     
             if abs(x - back_text_rect_obj_center[0]) <= back_button_size[0] and abs(y - back_text_rect_obj_center[1]) <= back_button_size[1]:
-                pygame.draw.line(window, colors['white'], [back_text_rect_obj_center[0] - back_button_size[0]/2, back_text_rect_obj_center[1] + back_button_size[1]/2], [back_text_rect_obj_center[0] + back_button_size[0]/2, back_text_rect_obj_center[1] + back_button_size[1]/2], width=3)
+                underlineWithOutline(window, back_text_rect_obj_center, back_button_size, underline_thickness,
+                                     colors['white'], colors['black'], 2)
                 mouse_on_back = True
     
             pygame.display.flip()
