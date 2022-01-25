@@ -1,8 +1,8 @@
-import time, os
+import time, os, sys
 import pygame
 from pygame.locals import QUIT
 from pygame.color import THECOLORS as colors
-colors['clear'] = (0, 0, 0, 0)
+from Darts import Demolition
 
 # os.environ['SDL_VIDEO_WINDOW_POS'] = "384,200"
 # os.environ['SDL_VIDEO_WINDOW_POS'] = "0,30"
@@ -76,11 +76,11 @@ def profilePicture(window, centre, color, player, playerNum):
 
     window.blit(text_surface_obj, text_rect_obj)
 
-def draw_diamond(window, color, centre, radius):
+def drawDiamond(window, color, centre, radius):
     points = [[centre[0]-radius, centre[1]], [centre[0], centre[1]+radius], [centre[0]+radius, centre[1]], [centre[0], centre[1]-radius]]
     pygame.draw.polygon(window, color, points)
 
-def draw_halfdiamond(window, color, centre, radius, side):
+def drawHalfDiamond(window, color, centre, radius, side):
     if side == 'left':
         points = [[centre[0], centre[1]+radius], [centre[0]+radius, centre[1]], [centre[0], centre[1]-radius]]
     elif side == 'right':
@@ -89,13 +89,13 @@ def draw_halfdiamond(window, color, centre, radius, side):
         points = [[centre[0]-radius, centre[1]], [centre[0], centre[1]+radius], [centre[0]+radius, centre[1]]]
     pygame.draw.polygon(window, color, points)
 
-def draw_tower(window, color, off_color, bottom_centre, score, radius, gap=3):
+def drawTower(window, color, off_color, bottom_centre, score, radius, gap=3):
     count, score_row = 0, -1
     for row in range(22):
         if row < 10:
             horizontal, vertical = (i - (row*(radius+gap)) for i in bottom_centre)
             for column in range(row+1)[::-1]:
-                draw_diamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius)
+                drawDiamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius)
                 count += 1
                 if count == score:
                     score_row = 1*row
@@ -105,7 +105,7 @@ def draw_tower(window, color, off_color, bottom_centre, score, radius, gap=3):
             vertical = bottom_centre[1] - (row*(radius+gap))
             horizontal = bottom_centre[0] - (9*(radius+gap))
             for column in range(10)[::-1]:
-                draw_halfdiamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius, 'top')
+                drawHalfDiamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius, 'top')
                 count += 1
                 if count == score:
                     score_row = 1*row
@@ -116,19 +116,19 @@ def draw_tower(window, color, off_color, bottom_centre, score, radius, gap=3):
                 horizontal = bottom_centre[0] - (10*(radius+gap))
                 for column in range(11)[::-1]:
                     if column == 0:
-                        draw_halfdiamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius, 'left')
+                        drawHalfDiamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius, 'left')
                         count += 1
                         if count == score:
                             score_row = 1*row
                             color = off_color
                     elif column < 10:
-                        draw_diamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius)
+                        drawDiamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius)
                         count += 1
                         if count == score:
                             score_row = 1*row
                             color = off_color
                     else:
-                        draw_halfdiamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius, 'right')
+                        drawHalfDiamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius, 'right')
                         count += 1
                         if count == score:
                             score_row = 1*row
@@ -137,7 +137,7 @@ def draw_tower(window, color, off_color, bottom_centre, score, radius, gap=3):
             else:
                 horizontal = bottom_centre[0] - (9*(radius+gap))
                 for column in range(10)[::-1]:
-                    draw_diamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius)
+                    drawDiamond(window, color, (horizontal + 2*column*(radius+gap), vertical), radius)
                     count += 1
                     if count == score:
                         score_row = 1*row
@@ -185,7 +185,7 @@ def drawDemolition(window, player, turn, players, scores):
             drawTurnMarkers(window, [centres[i][0] + window.get_size()[0]/15, centres[i][1]], radius, turn)
         else:
             drawTurnMarkers(window, [centres[i][0] + window.get_size()[0]/15, centres[i][1]], radius, None)
-        draw_tower(window, tower_colors[i], tower_offcolors[i], [centres[i][0], centres[i][1] - window.get_size()[1]*0.2], scores[i], radius)
+        drawTower(window, tower_colors[i], tower_offcolors[i], [centres[i][0], centres[i][1] - window.get_size()[1]*0.2], scores[i], radius)
 
     margin = 0.02
 
@@ -199,12 +199,12 @@ def drawDemolition(window, player, turn, players, scores):
     pygame.draw.line(window, colors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0]/2 - text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
     pygame.draw.line(window, colors['white'], [window.get_size()[0]/2 + text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0] - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
     pygame.draw.line(window, colors['white'], [max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], [window.get_size()[0] - max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], width=1)
-    draw_diamond(window, colors['white'], [max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
-    draw_diamond(window, colors['white'], [window.get_size()[0] - max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
-    draw_diamond(window, colors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], radius)
-    draw_diamond(window, colors['white'], [window.get_size()[0] - max(window.get_size())*margin, max(window.get_size())*margin], radius)
-    draw_diamond(window, colors['white'], [window.get_size()[0]/2 - text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], radius)
-    draw_diamond(window, colors['white'], [window.get_size()[0]/2 + text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [window.get_size()[0] - max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [window.get_size()[0] - max(window.get_size())*margin, max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [window.get_size()[0]/2 - text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [window.get_size()[0]/2 + text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], radius)
 
     pygame.display.flip()
 
@@ -329,7 +329,7 @@ def _circlepoints(r):
     points.sort()
     return points
 
-def textWithOutline(window, text, fontsize, centre, color, outline_color=None, outline_thickness=2, blit=True):
+def drawTextWithOutline(window, text, fontsize, centre, color, outline_color=None, outline_thickness=2, blit=True):
     font = pygame.font.Font('freesansbold.ttf', fontsize)
     text_surface_obj = font.render(text, True, color).convert_alpha()
     text_rect_obj = text_surface_obj.get_rect()
@@ -347,7 +347,7 @@ def textWithOutline(window, text, fontsize, centre, color, outline_color=None, o
 
     return text_size
 
-def lineWithOutline(window, centre, width, thickness, color, outline_color=None, outline_thickness=2, direction='horizontal'):
+def drawLineWithOutline(window, centre, width, thickness, color, outline_color=None, outline_thickness=2, direction='horizontal'):
     if direction == 'horizontal':
         if outline_color != None:
             for dx, dy in _circlepoints(outline_thickness):
@@ -357,27 +357,121 @@ def lineWithOutline(window, centre, width, thickness, color, outline_color=None,
         point_left, point_right = [centre[0] - width/2, centre[1]], [centre[0] + width/2, centre[1]]
         pygame.draw.line(window, color, point_left, point_right, thickness)
 
-def underlineWithOutline(window, text_rect_obj_center, button_size, thickness, color, outline_color=None, outline_thickness=2, direction='horizontal'):
+def drawUnderlineWithOutline(window, text_rect_obj_center, button_size, thickness, color, outline_color=None, outline_thickness=2, direction='horizontal'):
     if direction == 'horizontal':
-        lineWithOutline(window, [text_rect_obj_center[0], text_rect_obj_center[1] + button_size[1]/1.5], button_size[0], thickness, color, outline_color, outline_thickness)
+        drawLineWithOutline(window, [text_rect_obj_center[0], text_rect_obj_center[1] + button_size[1]/1.5], button_size[0], thickness, color, outline_color, outline_thickness)
+
+def drawRectWithOutline(window, rect, color, outline_color, outline_thickness):
+    outline_rect = rect.copy()
+    outline_rect.w += 2*outline_thickness
+    outline_rect.h += 2*outline_thickness
+    outline_rect.center = rect.center
+    pygame.draw.rect(window, outline_color, outline_rect)
+    pygame.draw.rect(window, color, rect)
+
+def drawArrowSelector(window, centre, fontsize, width, curr_option, fore_color, back_color, leftHover=False, rightHover=False):
+    font = pygame.font.Font('freesansbold.ttf', fontsize)
+    text_surface_obj = font.render(curr_option, True, fore_color).convert_alpha()
+    text_rect_obj = text_surface_obj.get_rect()
+    text_rect_obj.center = centre
+    box_rect_obj = text_rect_obj.copy()
+    box_rect_obj.w = width
+    box_rect_obj.center = centre
+    leftButton_center, leftButton_button_size = [centre[0] - (width/2)*0.9 - (box_rect_obj.h/2)*0.6/2, centre[1]], ((width/2)*0.2 - (box_rect_obj.h/2)*0.6, box_rect_obj.h)
+    rightButton_center, rightButton_button_size = [centre[0] + (width/2)*0.9 + (box_rect_obj.h/2)*0.6/2, centre[1]], ((width/2)*0.2 - (box_rect_obj.h/2)*0.6, box_rect_obj.h)
+
+    drawRectWithOutline(window, box_rect_obj, back_color, fore_color, 2)
+    if leftHover:
+        pygame.draw.rect(window, colors['grey40'], pygame.Rect([leftButton_center[i] - leftButton_button_size[i]/2 for i in [0, 1]], leftButton_button_size))
+    if rightHover:
+        pygame.draw.rect(window, colors['grey40'], pygame.Rect([rightButton_center[i] - rightButton_button_size[i]/2 for i in [0, 1]], rightButton_button_size))
+    window.blit(text_surface_obj, text_rect_obj)
+    drawHalfDiamond(window, fore_color, [centre[0] - (width/2)*0.9, centre[1]], (box_rect_obj.h/2)*0.6, 'right')
+    drawHalfDiamond(window, fore_color, [centre[0] + (width/2)*0.9, centre[1]], (box_rect_obj.h/2)*0.6, 'left')
+
+    return leftButton_center, leftButton_button_size, rightButton_center, rightButton_button_size
+
+def drawArrowSelectorTest():
+    pygame.init()
+    
+    FPS = 30 #frames per second setting
+    fpsClock = pygame.time.Clock()
+
+    info = pygame.display.Info()
+
+    resolutions, resolution_index = [], 0
+    for resolution in pygame.display.list_modes():
+        resolutions.append(' × '.join([str(i) for i in resolution]))
+    resolutions.reverse()
+
+    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
+    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren']
+    # players = ['Josh', 'Ben', 'Luke', 'Rachel']
+    # players = ['Josh', 'Ben', 'Luke']
+    # players = ['Josh', 'Ben']
+    # players = ['Josh']
+    # players = []
+
+    window = pygame.display.set_mode((info.current_w, (info.current_h-60)), pygame.RESIZABLE)
+    window.fill(colors['blue'])
+
+    buttons = drawArrowSelector(window, [window.get_size()[i]/2 for i in [0, 1]], 60, 500, resolutions[resolution_index], colors['white'], colors['black'])
+    leftButton_center, leftButton_button_size = buttons[0], buttons[1]
+    rightButton_center, rightButton_button_size = buttons[2], buttons[3]
+
+    while True:
+        x, y = pygame.mouse.get_pos()
+        pygame.display.set_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
+
+        window.fill(colors['blue'])
+
+        mouse_on_leftButton, mouse_on_rightButton = False, False
+        if abs(x - leftButton_center[0]) <= leftButton_button_size[0]/2 and abs(y - leftButton_center[1]) <= leftButton_button_size[1]/2:
+            mouse_on_leftButton = True
+            drawArrowSelector(window, [window.get_size()[i]/2 for i in [0, 1]], 60, 500, resolutions[resolution_index], colors['white'], colors['black'], True, False)
+
+
+        elif abs(x - rightButton_center[0]) <= rightButton_button_size[0]/2 and abs(y - rightButton_center[1]) <= rightButton_button_size[1]/2:
+            mouse_on_rightButton = True
+            drawArrowSelector(window, [window.get_size()[i]/2 for i in [0, 1]], 60, 500, resolutions[resolution_index], colors['white'], colors['black'], False, True)
+
+        else:
+            drawArrowSelector(window, [window.get_size()[i]/2 for i in [0, 1]], 60, 500, resolutions[resolution_index], colors['white'], colors['black'])
+
+        pygame.display.flip()
+
+        fpsClock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                return
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if mouse_on_leftButton:
+                    resolution_index -= 1
+                    resolution_index %= len(resolutions)
+
+                if mouse_on_rightButton:
+                    resolution_index += 1
+                    resolution_index %= len(resolutions)
 
 def drawBorders(window, title, margin, radius, color, outline_color=None):
     title_font_obj = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/50))
     title_text_surface_obj = title_font_obj.render(title, True, colors['white'])
     title_text_rect_obj = title_text_surface_obj.get_rect()
     title_text_rect_obj_center = (window.get_size()[0]/2, max(window.get_size())*margin)
-    textWithOutline(window, title, int(window.get_size()[0]/50), title_text_rect_obj_center, color,
+    drawTextWithOutline(window, title, int(window.get_size()[0]/50), title_text_rect_obj_center, color,
                     outline_color, 2)
 
     pygame.draw.line(window, colors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0]/2 - title_text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
     pygame.draw.line(window, colors['white'], [window.get_size()[0]/2 + title_text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0] - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
     pygame.draw.line(window, colors['white'], [max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], [window.get_size()[0] - max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], width=1)
-    draw_diamond(window, colors['white'], [max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
-    draw_diamond(window, colors['white'], [window.get_size()[0] - max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
-    draw_diamond(window, colors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], radius)
-    draw_diamond(window, colors['white'], [window.get_size()[0] - max(window.get_size())*margin, max(window.get_size())*margin], radius)
-    draw_diamond(window, colors['white'], [window.get_size()[0]/2 - title_text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], radius)
-    draw_diamond(window, colors['white'], [window.get_size()[0]/2 + title_text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [window.get_size()[0] - max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [window.get_size()[0] - max(window.get_size())*margin, max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [window.get_size()[0]/2 - title_text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], radius)
+    drawDiamond(window, colors['white'], [window.get_size()[0]/2 + title_text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], radius)
 
 def drawMenu(window, players, addingPlayer=False):
     window.fill(colors['white'])
@@ -390,26 +484,26 @@ def drawMenu(window, players, addingPlayer=False):
 
     play_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.2)
     if len(players) > 0:
-        play_button_size = textWithOutline(window, 'Play', int(window.get_size()[0]/30),
+        play_button_size = drawTextWithOutline(window, 'Play', int(window.get_size()[0]/30),
                                            play_text_rect_obj_center, colors['white'], colors['black'], 2)
     else:
-        play_button_size = textWithOutline(window, 'Play', int(window.get_size()[0]/30),
+        play_button_size = drawTextWithOutline(window, 'Play', int(window.get_size()[0]/30),
                                            play_text_rect_obj_center, colors['red'], None, 2)
 
     addPlayer_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.35)
     if len(players) < 6:
-        addPlayer_button_size = textWithOutline(window, 'Add Player', int(window.get_size()[0]/30),
+        addPlayer_button_size = drawTextWithOutline(window, 'Add Player', int(window.get_size()[0]/30),
                                                 addPlayer_text_rect_obj_center, colors['white'], colors['black'], 2, not addingPlayer)
     else:
-        addPlayer_button_size = textWithOutline(window, 'Add Player', int(window.get_size()[0]/30),
+        addPlayer_button_size = drawTextWithOutline(window, 'Add Player', int(window.get_size()[0]/30),
                                                 addPlayer_text_rect_obj_center, colors['red'], colors['red'], 2, not addingPlayer)
 
     settings_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.5)
-    settings_button_size = textWithOutline(window, 'Settings', int(window.get_size()[0]/30),
+    settings_button_size = drawTextWithOutline(window, 'Settings', int(window.get_size()[0]/30),
                                        settings_text_rect_obj_center, colors['white'], colors['black'], 2)
 
     quit_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.8)
-    quit_button_size = textWithOutline(window, 'Quit', int(window.get_size()[0]/30),
+    quit_button_size = drawTextWithOutline(window, 'Quit', int(window.get_size()[0]/30),
                                        quit_text_rect_obj_center, colors['white'], colors['black'], 2)
 
     playerColors = [colors['red'], colors['blue'], colors['green'], colors['yellow'], colors['cyan'], colors['orange']]
@@ -482,15 +576,15 @@ def drawGameMenu(window, players):
     drawBorders(window, 'Play', margin, radius, colors['white'])
 
     demolition_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.2)
-    demolition_button_size = textWithOutline(window, 'Demolition', int(window.get_size()[0]/30),
+    demolition_button_size = drawTextWithOutline(window, 'Demolition', int(window.get_size()[0]/30),
                                              demolition_text_rect_obj_center, colors['white'], colors['black'], 2)
 
     killer_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.35)
-    killer_button_size = textWithOutline(window, 'Killer', int(window.get_size()[0]/30),
+    killer_button_size = drawTextWithOutline(window, 'Killer', int(window.get_size()[0]/30),
                                          killer_text_rect_obj_center, colors['white'], colors['black'], 2)
 
     back_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.8)
-    back_button_size = textWithOutline(window, 'Back', int(window.get_size()[0]/30),
+    back_button_size = drawTextWithOutline(window, 'Back', int(window.get_size()[0]/30),
                                        back_text_rect_obj_center, colors['white'], colors['black'], 2)
 
     playerColors = [colors['red'], colors['blue'], colors['green'], colors['yellow'], colors['cyan'], colors['orange']]
@@ -503,34 +597,89 @@ def drawGameMenu(window, players):
     return [demolition_button_size, demolition_text_rect_obj_center, killer_button_size, killer_text_rect_obj_center,
             back_button_size, back_text_rect_obj_center]
 
-def drawSettingsMenu(window):
-    window.fill([255,255,255])
+def drawSettingsMenu(window, curr_resolution, resLeftHover, resRightHover):
+    window.fill(colors['white'])
     gradientRect( window, (80, 80, 80), (180, 180, 180), pygame.Rect( 0, 0, *window.get_size() ) )
 
     margin = 0.02
     radius = window.get_size()[0]/200
+    centre_margin = window.get_size()[0]/30
 
     drawBorders(window, 'Settings', margin, radius, colors['white'])
 
-    video_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.2)
-    video_button_size = textWithOutline(window, 'Video Settings', int(window.get_size()[0]/30),
-                                             video_text_rect_obj_center, colors['white'], colors['black'], 2)
+    font = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
+    resolution_text_surface_obj = font.render('Display Resolution', True, colors['white']).convert_alpha()
+    resolution_text_rect_obj_center = (window.get_size()[0]/2 - resolution_text_surface_obj.get_rect().w/2 - centre_margin,
+                                       window.get_size()[1]*0.2)
+    drawTextWithOutline(window, 'Display Resolution', int(window.get_size()[0]/30),
+                                           resolution_text_rect_obj_center, colors['white'], colors['black'], 2)
 
-    back_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.8)
-    back_button_size = textWithOutline(window, 'Back', int(window.get_size()[0]/30),
+    buttons = drawArrowSelector(window, [window.get_size()[0]/2 + (window.get_size()[0]/3)/2 + centre_margin,
+                                         window.get_size()[1]*0.2], int(window.get_size()[0]/30),
+                                window.get_size()[0]/3, curr_resolution, colors['white'], colors['black'],
+                                resLeftHover, resRightHover)
+    leftButton_center, leftButton_button_size = buttons[0], buttons[1]
+    rightButton_center, rightButton_button_size = buttons[2], buttons[3]
+
+    font = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
+    back_text_surface_obj = font.render('Back', True, colors['white']).convert_alpha()
+    back_text_rect_obj_center = (window.get_size()[0]/2 - back_text_surface_obj.get_rect().w/2 - centre_margin,
+                                       window.get_size()[1]*0.8)
+    back_button_size = drawTextWithOutline(window, 'Back', int(window.get_size()[0]/30),
                                        back_text_rect_obj_center, colors['white'], colors['black'], 2)
+
+    font = pygame.font.Font('freesansbold.ttf', int(window.get_size()[0]/30))
+    apply_text_surface_obj = font.render('Apply', True, colors['white']).convert_alpha()
+    apply_text_rect_obj_center = (window.get_size()[0]/2 + apply_text_surface_obj.get_rect().w/2 + centre_margin,
+                                       window.get_size()[1]*0.8)
+    apply_button_size = drawTextWithOutline(window, 'Apply', int(window.get_size()[0]/30),
+                                       apply_text_rect_obj_center, colors['white'], colors['black'], 2)
 
     pygame.display.flip()
 
-    return [video_button_size, video_text_rect_obj_center, back_button_size, back_text_rect_obj_center]
+    return [leftButton_center, leftButton_button_size, rightButton_center, rightButton_button_size,
+            back_button_size, back_text_rect_obj_center, apply_button_size, apply_text_rect_obj_center]
 
-def multiMenuTest():
+def resizeTest():
+    pygame.init()
+    # Create the window, saving it to a variable.
+    surface = pygame.display.set_mode((350, 250), pygame.RESIZABLE)
+    pygame.display.set_caption("Example resizable window")
+    
+    while True:
+        surface.fill((255,255,255))
+    
+        # Draw a red rectangle that resizes with the window.
+        pygame.draw.rect(surface, (200,0,0), (surface.get_width()/3,
+          surface.get_height()/3, surface.get_width()/3,
+          surface.get_height()/3))
+    
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+    
+            if event.type == pygame.VIDEORESIZE:
+                # There's some code to add back window content here.
+                surface = pygame.display.set_mode((event.w, event.h),
+                                                  pygame.RESIZABLE)
+
+def main():
     pygame.init()
     
     FPS = 30 #frames per second setting
     fpsClock = pygame.time.Clock()
 
     info = pygame.display.Info()
+
+    resolutions, resolution_index = [], -1
+    for resolution in pygame.display.list_modes():
+        resolutions.append(' × '.join([str(i) for i in resolution]))
+    resolutions.reverse()
+    curr_resolution = resolutions[resolution_index]
 
     # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
     # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren']
@@ -578,22 +727,22 @@ def multiMenuTest():
 
             mouse_on_play, mouse_on_addPlayer, mouse_on_settings, mouse_on_quit = False, False, False, False
             if len(players) > 0 and abs(x - play_text_rect_obj_center[0]) <= play_button_size[0] and abs(y - play_text_rect_obj_center[1]) <= play_button_size[1]:
-                underlineWithOutline(window, play_text_rect_obj_center, play_button_size, underline_thickness,
+                drawUnderlineWithOutline(window, play_text_rect_obj_center, play_button_size, underline_thickness,
                                      colors['white'], colors['black'], 2)
                 mouse_on_play = True
     
             if len(players) < 6 and abs(x - addPlayer_text_rect_obj_center[0]) <= addPlayer_button_size[0] and abs(y - addPlayer_text_rect_obj_center[1]) <= addPlayer_button_size[1]:
-                underlineWithOutline(window, addPlayer_text_rect_obj_center, addPlayer_button_size,
+                drawUnderlineWithOutline(window, addPlayer_text_rect_obj_center, addPlayer_button_size,
                                      underline_thickness, colors['white'], colors['black'], 2)
                 mouse_on_addPlayer = True
     
             if abs(x - settings_text_rect_obj_center[0]) <= settings_button_size[0] and abs(y - settings_text_rect_obj_center[1]) <= settings_button_size[1]:
-                underlineWithOutline(window, settings_text_rect_obj_center, settings_button_size, underline_thickness,
+                drawUnderlineWithOutline(window, settings_text_rect_obj_center, settings_button_size, underline_thickness,
                                      colors['white'], colors['black'], 2)
                 mouse_on_settings = True
     
             if abs(x - quit_text_rect_obj_center[0]) <= quit_button_size[0] and abs(y - quit_text_rect_obj_center[1]) <= quit_button_size[1]:
-                underlineWithOutline(window, quit_text_rect_obj_center, quit_button_size, underline_thickness,
+                drawUnderlineWithOutline(window, quit_text_rect_obj_center, quit_button_size, underline_thickness,
                                      colors['white'], colors['black'], 2)
                 mouse_on_quit = True
     
@@ -615,6 +764,11 @@ def multiMenuTest():
 
                     if mouse_on_settings:
                         menu = 'settings'
+                        buttons = drawSettingsMenu(window, resolutions[resolution_index], False, False)
+                        leftButton_center, leftButton_button_size = buttons[0], buttons[1]
+                        rightButton_center, rightButton_button_size = buttons[2], buttons[3]
+                        back_button_size, back_text_rect_obj_center = buttons[4], buttons[5]
+                        apply_button_size, apply_text_rect_obj_center = buttons[6], buttons[7]
 
                     if any(mouse_on_cross):
                         players.pop(mouse_on_cross.index(True))
@@ -643,21 +797,28 @@ def multiMenuTest():
         if menu == 'settings':
             x, y = pygame.mouse.get_pos()
             pygame.display.set_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
-    
-            buttons = drawSettingsMenu(window)
-            video_button_size, video_text_rect_obj_center = buttons[0], buttons[1]
-            back_button_size, back_text_rect_obj_center = buttons[2], buttons[3]
 
-            mouse_on_video, mouse_on_back = False, False
-            if abs(x - video_text_rect_obj_center[0]) <= video_button_size[0] and abs(y - video_text_rect_obj_center[1]) <= video_button_size[1]:
-                underlineWithOutline(window, video_text_rect_obj_center, video_button_size, underline_thickness,
-                                     colors['white'], colors['black'], 2)
-                mouse_on_video = True
+            mouse_on_leftButton, mouse_on_rightButton, mouse_on_back, mouse_on_apply = False, False, False, False
+            if abs(x - leftButton_center[0]) <= leftButton_button_size[0]/2 and abs(y - leftButton_center[1]) <= leftButton_button_size[1]/2:
+                mouse_on_leftButton = True
+                drawSettingsMenu(window, resolutions[resolution_index], True, False)
+
+            elif abs(x - rightButton_center[0]) <= rightButton_button_size[0]/2 and abs(y - rightButton_center[1]) <= rightButton_button_size[1]/2:
+                mouse_on_rightButton = True
+                drawSettingsMenu(window, resolutions[resolution_index], False, True)
+    
+            else:
+                drawSettingsMenu(window, resolutions[resolution_index], False, False)
     
             if abs(x - back_text_rect_obj_center[0]) <= back_button_size[0] and abs(y - back_text_rect_obj_center[1]) <= back_button_size[1]:
-                underlineWithOutline(window, back_text_rect_obj_center, back_button_size, underline_thickness,
+                drawUnderlineWithOutline(window, back_text_rect_obj_center, back_button_size, underline_thickness,
                                      colors['white'], colors['black'], 2)
                 mouse_on_back = True
+    
+            if abs(x - apply_text_rect_obj_center[0]) <= apply_button_size[0] and abs(y - apply_text_rect_obj_center[1]) <= apply_button_size[1]:
+                drawUnderlineWithOutline(window, apply_text_rect_obj_center, apply_button_size, underline_thickness,
+                                     colors['white'], colors['black'], 2)
+                mouse_on_apply = True
     
             pygame.display.flip()
     
@@ -668,9 +829,25 @@ def multiMenuTest():
                     return
     
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if mouse_on_video:
-                        print('video')
+                    if mouse_on_leftButton:
+                        resolution_index -= 1
+                        resolution_index %= len(resolutions)
     
+                    if mouse_on_rightButton:
+                        resolution_index += 1
+                        resolution_index %= len(resolutions)
+
+                    if mouse_on_apply:
+                        if curr_resolution != resolutions[resolution_index]:
+                            new_res_ratio = int(resolutions[-1].split(' × ')[0])/int(resolutions[resolution_index].split(' × ')[0])
+                            window = pygame.display.set_mode([res/new_res_ratio for res in maximised_res], pygame.RESIZABLE)
+                            buttons = drawSettingsMenu(window, resolutions[resolution_index], False, False)
+                            leftButton_center, leftButton_button_size = buttons[0], buttons[1]
+                            rightButton_center, rightButton_button_size = buttons[2], buttons[3]
+                            back_button_size, back_text_rect_obj_center = buttons[4], buttons[5]
+                            apply_button_size, apply_text_rect_obj_center = buttons[6], buttons[7]
+                            curr_resolution = resolutions[resolution_index]
+
                     if mouse_on_back:
                         menu = 'main'
     
@@ -705,17 +882,17 @@ def multiMenuTest():
 
             mouse_on_demolition, mouse_on_killer, mouse_on_back = False, False, False
             if abs(x - demolition_text_rect_obj_center[0]) <= demolition_button_size[0] and abs(y - demolition_text_rect_obj_center[1]) <= demolition_button_size[1]:
-                underlineWithOutline(window, demolition_text_rect_obj_center, demolition_button_size, underline_thickness,
+                drawUnderlineWithOutline(window, demolition_text_rect_obj_center, demolition_button_size, underline_thickness,
                                      colors['white'], colors['black'], 2)
                 mouse_on_demolition = True
     
             if len(players) < 6 and abs(x - killer_text_rect_obj_center[0]) <= killer_button_size[0] and abs(y - killer_text_rect_obj_center[1]) <= killer_button_size[1]:
-                underlineWithOutline(window, killer_text_rect_obj_center, killer_button_size, underline_thickness,
+                drawUnderlineWithOutline(window, killer_text_rect_obj_center, killer_button_size, underline_thickness,
                                      colors['white'], colors['black'], 2)
                 mouse_on_killer = True
     
             if abs(x - back_text_rect_obj_center[0]) <= back_button_size[0] and abs(y - back_text_rect_obj_center[1]) <= back_button_size[1]:
-                underlineWithOutline(window, back_text_rect_obj_center, back_button_size, underline_thickness,
+                drawUnderlineWithOutline(window, back_text_rect_obj_center, back_button_size, underline_thickness,
                                      colors['white'], colors['black'], 2)
                 mouse_on_back = True
     
@@ -729,7 +906,9 @@ def multiMenuTest():
     
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if mouse_on_demolition:
-                        print('Demolition')
+                        game = Demolition(window, players)
+                        game.play()
+                        menu = 'play'
                         
                     if mouse_on_killer:
                         print('Killer')
@@ -756,29 +935,9 @@ def multiMenuTest():
                 elif event.type == pygame.VIDEORESIZE:
                     window = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
-def resizeTest():
-    pygame.init()
-    # Create the window, saving it to a variable.
-    surface = pygame.display.set_mode((350, 250), pygame.RESIZABLE)
-    pygame.display.set_caption("Example resizable window")
-    
-    while True:
-        surface.fill((255,255,255))
-    
-        # Draw a red rectangle that resizes with the window.
-        pygame.draw.rect(surface, (200,0,0), (surface.get_width()/3,
-          surface.get_height()/3, surface.get_width()/3,
-          surface.get_height()/3))
-    
-        pygame.display.update()
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-    
-            if event.type == pygame.VIDEORESIZE:
-                # There's some code to add back window content here.
-                surface = pygame.display.set_mode((event.w, event.h),
-                                                  pygame.RESIZABLE)
+if __name__ == "__main__":
+    try:
+        main()
+
+    except KeyboardInterrupt:
+        sys.exit(1)

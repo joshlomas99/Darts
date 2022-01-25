@@ -2,7 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import pygame
 from pygame.locals import QUIT
-from pygameGUIs import setupDemolition, updateScoreDemolition, drawDemolition
+from pygameGUIs import updateScoreDemolition, drawDemolition
 
 class InvalidScore(Exception):
     pass
@@ -24,11 +24,11 @@ def Score(scoreIn):
         return False
 
 class Demolition:
-    def __init__(self, players, target):
+    def __init__(self, window, players, target=180):
         self.players = players
         self.scores = [target]*len(players)
-        os.environ['SDL_VIDEO_WINDOW_POS'] = "768,216"
-        self.window = setupDemolition(self.players, self.scores)
+        # os.environ['SDL_VIDEO_WINDOW_POS'] = "768,216"
+        self.window = window
 
     def shot(self, player, turnNum):
         score = False
@@ -72,7 +72,7 @@ class Demolition:
             player %= 6
 
         print(f'{self.players[player - 1]} wins!')
-        pygame.quit()
+        return
 
 class Killer:
     pass
