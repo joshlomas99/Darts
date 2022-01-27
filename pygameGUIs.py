@@ -724,7 +724,7 @@ def drawSegmentTest():
                 pygameQuit()
                 return
 
-def drawDartBoard(window, centre, radius, fore_color, filled=[False]*20, width=1):
+def drawDartBoard(window, centre, radius, fore_color, filled=[False]*20, width=1, split_fills=False):
     board_rect = pygameRect(0, 0, 2*radius, 2*radius)
     board_rect.center = centre
     starts = [1.5, 8.5, 10.5, 3.5, 19.5, 5.5, 12.5, 14.5, 17.5, 6.5, 15.5, 18.5, 4.5, 16.5, 7.5, 13.5, 9.5, 2.5, 11.5,
@@ -732,7 +732,11 @@ def drawDartBoard(window, centre, radius, fore_color, filled=[False]*20, width=1
     if any(filled):
         for n, fill in enumerate(filled):
             if fill:
-                drawSegment(window, centre, radius, radius*(16/170), (starts[n]/20)*2*pi, ((starts[n]-1)/20)*2*pi,
+                if split_fills:
+                    drawSplitSegment(window, centre, radius, radius*(16/170), (starts[n]/20)*2*pi,
+                                     ((starts[n]-1)/20)*2*pi, fill, split_fills, width+3, 0.02, 10)
+                else:
+                    drawSegment(window, centre, radius, radius*(16/170), (starts[n]/20)*2*pi, ((starts[n]-1)/20)*2*pi,
                             fill)
 
     pygameDrawCircle(window, fore_color, centre, radius, width)
