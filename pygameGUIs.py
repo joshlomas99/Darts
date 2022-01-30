@@ -1,24 +1,29 @@
+from os import environ as osEnviron
 from time import sleep
 from math import sin, cos, pi
 from random import random
 from pygame import init as pygameInit, quit as pygameQuit, Surface as pygameSurface, Rect as pygameRect
 from pygame import SRCALPHA as pygameSRCALPHA, BLEND_RGBA_MIN as pygameBLEND_RGBA_MIN
-from pygame import RESIZABLE as pygameRESIZABLE, MOUSEBUTTONDOWN as pygameMOUSEBUTTONDOWN
+from pygame import RESIZABLE as pygameRESIZABLE, MOUSEBUTTONDOWN as pygameMOUSEBUTTONDOWN, K_F11 as pygameK_F11
 from pygame import KEYDOWN as pygameKEYDOWN, K_ESCAPE as pygameK_ESCAPE, K_RETURN as pygameK_RETURN
 from pygame import K_BACKSPACE as pygameK_BACKSPACE, BLEND_RGBA_MAX as pygameBLEND_RGBA_MAX
+from pygame import VIDEORESIZE as pygameVIDEORESIZE
 from pygame.time import Clock as pygameTimeClock
 from pygame.display import Info as pygameDisplayInfo, set_mode as pygameDisplaySet_mode
 from pygame.display import set_caption as pygameDisplaySet_caption, flip as pygameDisplayFlip
-from pygame.display import list_modes as pygameDisplayList_modes
+from pygame.display import list_modes as pygameDisplayList_modes, init as pygameDisplayInit, quit as pygameDisplayQuit
 from pygame.event import get as pygameEventGet
 from pygame.mouse import get_pos as pygameMouseGet_pos
 from pygame.draw import line as pygameDrawLine, circle as pygameDrawCircle, polygon as pygameDrawPolygon
 from pygame.draw import rect as pygameDrawRect, lines as pygameDrawLines, arc as pygameDrawArc
 from pygame.transform import smoothscale as pygameTransformSmoothscale, scale as pygameTransformScale
+from pygame.transform import rotate as pygameTransformRotate
 from pygame.image import load as pygameImageLoad
 from pygame.font import Font as pygameFontFont
 from pygame.locals import QUIT as pygameLocalsQUIT
 from pygame.color import THECOLORS as pygameColors
+maximised_res = (1536, 801)
+maximised_pos = "0,20"
 
 # os.environ['SDL_VIDEO_WINDOW_POS'] = "384,200"
 # os.environ['SDL_VIDEO_WINDOW_POS'] = "0,30"
@@ -65,12 +70,14 @@ def gradientRect(window, top_colour, bottom_colour, target_rect):
     colour_rect = pygameTransformSmoothscale(colour_rect, (target_rect.width, target_rect.height))
     window.blit(colour_rect, target_rect)
 
-def profilePicture(window, centre, color, player, playerNum):
+def profilePicture(window, centre, color, player, playerNum, width=None):
+    if width == None:
+        width = window.get_size()[0]/15
     try:
         image_original  = pygameImageLoad('Pictures/' + player + '.png').convert()
     except:
         image_original  = pygameImageLoad(f'Pictures/Blank{playerNum+1}.png').convert()
-    image = pygameTransformScale(image_original, [image_original.get_size()[i]*((window.get_size()[0]/15)/image_original.get_size()[0]) for i in range(2)])
+    image = pygameTransformScale(image_original, [image_original.get_size()[i]*(width/image_original.get_size()[0]) for i in range(2)])
     cropped_image  = pygameSurface((max(image.get_size()), max(image.get_size())), pygameSRCALPHA)
 
     image_pos = [centre[i] - max(image.get_size())/2 for i in range(2)]
@@ -83,10 +90,10 @@ def profilePicture(window, centre, color, player, playerNum):
 
     window.blit(cropped_image, image_pos)
 
-    font_obj = pygameFontFont('freesansbold.ttf', int(window.get_size()[0]/50))
+    font_obj = pygameFontFont('freesansbold.ttf', int(width/3))
     text_surface_obj = font_obj.render(player, True, pygameColors['white'])
     text_rect_obj = text_surface_obj.get_rect()
-    text_rect_obj.center = (centre[0], centre[1] + window.get_size()[1]/9)
+    text_rect_obj.center = (centre[0], centre[1] + width*0.9)
 
     window.blit(text_surface_obj, text_rect_obj)
 
@@ -164,19 +171,21 @@ def drawTower(window, color, off_color, bottom_centre, score, radius, gap=3):
 
     window.blit(text_surface_obj, text_rect_obj)
 
-def drawTurnMarker(window, centre, radius, filled=False):
-    points = [[centre[0] - radius, centre[1] - radius], [centre[0] + radius, centre[1] - radius], [centre[0] + radius, centre[1] + radius], [centre[0] - radius, centre[1] + radius], [centre[0] - 2*radius, centre[1]]]
+def drawTurnMarker(window, centre, radius, filled=False, left=True):
+    if left:
+        # top left, top right, bottom right, bottom left, centre double left
+        points = [[centre[0] - radius, centre[1] - radius], [centre[0] + radius, centre[1] - radius], [centre[0] + radius, centre[1] + radius], [centre[0] - radius, centre[1] + radius], [centre[0] - 2*radius, centre[1]]]
+    else:
+        # top right, top left, bottom left, bottom right, centre double right
+        points = [[centre[0] + radius, centre[1] - radius], [centre[0] - radius, centre[1] - radius], [centre[0] - radius, centre[1] + radius], [centre[0] + radius, centre[1] + radius], [centre[0] + 2*radius, centre[1]]]
     if filled:
         pygameDrawPolygon(window, pygameColors['white'], points)
     else:
         pygameDrawPolygon(window, pygameColors['white'], points, width=1)
 
-def drawTurnMarkers(window, centre, radius, turn=None):
+def drawTurnMarkers(window, centre, radius, turn=None, left=True):
     for t, height in enumerate([centre[1] - 3*radius, centre[1], centre[1] + 3*radius]):
-        if t == turn:
-            drawTurnMarker(window, [centre[0], height], radius, filled=True)
-        else:
-            drawTurnMarker(window, [centre[0], height], radius, filled=False)
+        drawTurnMarker(window, [centre[0], height], radius, t == turn, left)
 
 def drawDemolition(window, player, turn, players, scores):
     window.fill([255,255,255])
@@ -184,42 +193,25 @@ def drawDemolition(window, player, turn, players, scores):
     centres = [[window.get_size()[0]*(i/len(players) - (1-((len(players)-1)*(1/len(players))))/2), window.get_size()[1]*0.7 + (window.get_size()[1]*0.05*(len(players) < 6))] for i in range(1, (len(players)+1))]
     tower_colors = [pygameColors['red'], pygameColors['blue'], pygameColors['green'], pygameColors['yellow'], pygameColors['cyan'], pygameColors['orange']]
     tower_offcolors = [[j/2.5 for j in i] for i in tower_colors]
+    
+    if len(players) == 6:
+        radius = window.get_size()[0]/250
+    elif len(players) > 6:
+        print('Too many players!')
+        pygameQuit()
+        return
+    else:
+        radius = window.get_size()[0]/200
 
     for i in range(len(players)):
         profilePicture(window, centres[i], tower_colors[i], players[i], i)
-        if len(players) == 6:
-            radius = window.get_size()[0]/250
-        elif len(players) > 6:
-            print('Too many players!')
-            pygameQuit()
-            return
-        else:
-            radius = window.get_size()[0]/200
         if player == players[i]:
             drawTurnMarkers(window, [centres[i][0] + window.get_size()[0]/15, centres[i][1]], radius, turn)
         else:
             drawTurnMarkers(window, [centres[i][0] + window.get_size()[0]/15, centres[i][1]], radius, None)
         drawTower(window, tower_colors[i], tower_offcolors[i], [centres[i][0], centres[i][1] - window.get_size()[1]*0.2], scores[i], radius)
 
-    margin = 0.02
-
-    font_obj = pygameFontFont('freesansbold.ttf', int(window.get_size()[0]/50))
-    text_surface_obj = font_obj.render('Demolition', True, pygameColors['white'])
-    text_rect_obj = text_surface_obj.get_rect()
-    text_rect_obj.center = (window.get_size()[0]/2, max(window.get_size())*margin)
-
-    window.blit(text_surface_obj, text_rect_obj)
-
-    pygameDrawLine(window, pygameColors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0]/2 - text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
-    pygameDrawLine(window, pygameColors['white'], [window.get_size()[0]/2 + text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0] - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
-    pygameDrawLine(window, pygameColors['white'], [max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], [window.get_size()[0] - max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], width=1)
-    drawDiamond(window, pygameColors['white'], [max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
-    drawDiamond(window, pygameColors['white'], [window.get_size()[0] - max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
-    drawDiamond(window, pygameColors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], radius)
-    drawDiamond(window, pygameColors['white'], [window.get_size()[0] - max(window.get_size())*margin, max(window.get_size())*margin], radius)
-    drawDiamond(window, pygameColors['white'], [window.get_size()[0]/2 - text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], radius)
-    drawDiamond(window, pygameColors['white'], [window.get_size()[0]/2 + text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], radius)
-
+    drawBorders(window, 'Demolition', 0.02, radius, pygameColors['white'])
     pygameDisplayFlip()
 
 def updateScoreDemolition(window, player, turn, new_score, players, scores):
@@ -243,39 +235,6 @@ def drawCross(window, centre, radius, back_color, fore_color):
     pygameDrawCircle(window, fore_color, centre, radius, width=1)
     pygameDrawLine(window, fore_color, [centre[i] - (int(radius/(2**0.5)) - 1) for i in range(2)], [centre[i] + (int(radius/(2**0.5)) - 1) for i in range(2)])
     pygameDrawLine(window, fore_color, [centre[0] - (int(radius/(2**0.5)) - 1), centre[1] + (int(radius/(2**0.5)) - 1)], [centre[0] + (int(radius/(2**0.5)) - 1), centre[1] - (int(radius/(2**0.5)) - 1)])
-    pygameInit()
-    
-    FPS = 30 #frames per second setting
-    fpsClock = pygameTimeClock()
-
-    info = pygameDisplayInfo()
-
-    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
-    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren']
-    # players = ['Josh', 'Ben', 'Luke', 'Rachel']
-    # players = ['Josh', 'Ben', 'Luke']
-    # players = ['Josh', 'Ben']
-    # players = ['Josh']
-    # players = []
-
-    window = pygameDisplaySet_mode((info.current_w/2, (info.current_h-60)/2))
-    window.fill(pygameColors['yellow'])
-
-    drawCross(window, [window.get_size()[i]/2 for i in [0, 1]], min(window.get_size())/2*0.75, pygameColors['white'], pygameColors['black'])
-
-    while True:
-        x, y = pygameMouseGet_pos()
-        pygameDisplaySet_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
-
-        # test function here
-
-        pygameDisplayFlip()
-
-        fpsClock.tick(FPS)
-        for event in pygameEventGet():
-            if event.type == pygameLocalsQUIT:
-                pygameQuit()
-                return
 
 _circle_cache = {}
 def _circlepoints(r):
@@ -359,68 +318,6 @@ def drawArrowSelector(window, centre, fontsize, width, curr_option, fore_color, 
     drawHalfDiamond(window, fore_color, [centre[0] + (width/2)*0.9, centre[1]], (box_rect_obj.h/2)*0.6, 'left')
 
     return leftButton_center, leftButton_button_size, rightButton_center, rightButton_button_size
-    pygameInit()
-    
-    FPS = 30 #frames per second setting
-    fpsClock = pygameTimeClock()
-
-    info = pygameDisplayInfo()
-
-    resolutions, resolution_index = [], 0
-    for resolution in pygameDisplayList_modes():
-        resolutions.append(' × '.join([str(i) for i in resolution]))
-    resolutions.reverse()
-
-    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
-    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren']
-    # players = ['Josh', 'Ben', 'Luke', 'Rachel']
-    # players = ['Josh', 'Ben', 'Luke']
-    # players = ['Josh', 'Ben']
-    # players = ['Josh']
-    # players = []
-
-    window = pygameDisplaySet_mode((info.current_w, (info.current_h-60)), pygameRESIZABLE)
-    window.fill(pygameColors['blue'])
-
-    buttons = drawArrowSelector(window, [window.get_size()[i]/2 for i in [0, 1]], 60, 500, resolutions[resolution_index], pygameColors['white'], pygameColors['black'])
-    leftButton_center, leftButton_button_size = buttons[0], buttons[1]
-    rightButton_center, rightButton_button_size = buttons[2], buttons[3]
-
-    while True:
-        x, y = pygameMouseGet_pos()
-        pygameDisplaySet_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
-
-        window.fill(pygameColors['blue'])
-
-        mouse_on_leftButton, mouse_on_rightButton = False, False
-        if abs(x - leftButton_center[0]) <= leftButton_button_size[0]/2 and abs(y - leftButton_center[1]) <= leftButton_button_size[1]/2:
-            mouse_on_leftButton = True
-            drawArrowSelector(window, [window.get_size()[i]/2 for i in [0, 1]], 60, 500, resolutions[resolution_index], pygameColors['white'], pygameColors['black'], True, False)
-
-
-        elif abs(x - rightButton_center[0]) <= rightButton_button_size[0]/2 and abs(y - rightButton_center[1]) <= rightButton_button_size[1]/2:
-            mouse_on_rightButton = True
-            drawArrowSelector(window, [window.get_size()[i]/2 for i in [0, 1]], 60, 500, resolutions[resolution_index], pygameColors['white'], pygameColors['black'], False, True)
-
-        else:
-            drawArrowSelector(window, [window.get_size()[i]/2 for i in [0, 1]], 60, 500, resolutions[resolution_index], pygameColors['white'], pygameColors['black'])
-
-        pygameDisplayFlip()
-
-        fpsClock.tick(FPS)
-        for event in pygameEventGet():
-            if event.type == pygameLocalsQUIT:
-                pygameQuit()
-                return
-
-            elif event.type == pygameMOUSEBUTTONDOWN:
-                if mouse_on_leftButton:
-                    resolution_index -= 1
-                    resolution_index %= len(resolutions)
-
-                if mouse_on_rightButton:
-                    resolution_index += 1
-                    resolution_index %= len(resolutions)
 
 def drawBorders(window, title, margin, radius, color, outline_color=None):
     title_font_obj = pygameFontFont('freesansbold.ttf', int(window.get_size()[0]/50))
@@ -637,7 +534,136 @@ def drawJaggedArc(window, centre, radius, color, width, start_angle, end_angle, 
         points.append([x, y])
     pygameDrawLines(window, color, False, points, width)
 
-def drawJaggedArcTest():
+    return points
+
+def generateJaggedArc(centre, radius, start_angle, end_angle, jag_width, jag_num, fix_startandend=False):
+    if fix_startandend:
+        points = [fix_startandend[0]]
+        angle_range = abs(end_angle - start_angle)/jag_num
+        for n, prop in enumerate(range(1, jag_num)):
+            curr_angle = start_angle + angle_range*prop
+            x = centre[0] + radius*sin(curr_angle)
+            y = centre[1] - radius*cos(curr_angle)
+            x += (((-1)**(x > centre[0]))*((-1)**n)*random()*jag_width*radius)
+            y -= (((-1)**(y > centre[1]))*((-1)**n)*random()*jag_width*radius)
+            points.append([x, y])
+        points.append(fix_startandend[1])
+
+    else:
+        points = []
+        angle_range = abs(end_angle - start_angle)/jag_num
+        for n, prop in enumerate(range(jag_num+1)):
+            curr_angle = start_angle + angle_range*prop
+            x = centre[0] + radius*sin(curr_angle)
+            y = centre[1] - radius*cos(curr_angle)
+            x += (((-1)**(x > centre[0]))*((-1)**n)*random()*jag_width*radius)
+            y += (((-1)**(y > centre[1]))*((-1)**n)*random()*jag_width*radius)
+            points.append([x, y])
+
+    return points
+
+def generateJaggedArcsFixed(centre, outer_radius, inner_radius, start_angle, end_angle, jag_width, jag_num):
+    fixed_points_inner = generateJaggedArc(centre, inner_radius, start_angle, end_angle, 0, 2)
+    fixed_points_1_3 = generateJaggedArc(centre, outer_radius*(1/3), start_angle, end_angle, jag_width, jag_num,
+                                         [[centre[0] + outer_radius*(1/3)*sin(start_angle),
+                                           centre[1] - outer_radius*(1/3)*cos(start_angle)],
+                                          [centre[0] + outer_radius*(1/3)*sin(end_angle),
+                                           centre[1] - outer_radius*(1/3)*cos(end_angle)]])
+    fixed_points_2_3 = generateJaggedArc(centre, outer_radius*(2/3), start_angle, end_angle, jag_width, jag_num,
+                                         [[centre[0] + outer_radius*(2/3)*sin(start_angle),
+                                           centre[1] - outer_radius*(2/3)*cos(start_angle)],
+                                          [centre[0] + outer_radius*(2/3)*sin(end_angle),
+                                           centre[1] - outer_radius*(2/3)*cos(end_angle)]])
+    fixed_points_outer = generateJaggedArc(centre, outer_radius, start_angle, end_angle, 0, 20)
+
+    return [fixed_points_inner, fixed_points_1_3, fixed_points_2_3, fixed_points_outer]
+
+def drawSplitSegment(window, centre, outer_radius, inner_radius, start_angle, end_angle, on_colors, off_colors,
+                     split_color, split_width, jag_width, jag_num, fixed):
+
+    if on_colors[0]:
+        points_inner = generateJaggedArc(centre, inner_radius, start_angle, end_angle, 0, 2)
+        points_1_3_in = generateJaggedArc(centre, outer_radius*(1/3), start_angle, end_angle, jag_width, jag_num)
+    else:
+        points_inner = generateJaggedArc(centre, inner_radius, start_angle, end_angle, 0, 2,
+                                          [[centre[0] + inner_radius*sin(start_angle),
+                                            centre[1] - inner_radius*cos(start_angle)],
+                                          [centre[0] + inner_radius*sin(end_angle),
+                                            centre[1] - inner_radius*cos(end_angle)]])
+        points_1_3_in = generateJaggedArc(centre, outer_radius*(1/3), start_angle, end_angle, jag_width, jag_num,
+                                          [[centre[0] + outer_radius*(1/3)*sin(start_angle),
+                                            centre[1] - outer_radius*(1/3)*cos(start_angle)],
+                                          [centre[0] + outer_radius*(1/3)*sin(end_angle),
+                                            centre[1] - outer_radius*(1/3)*cos(end_angle)]])
+
+    if on_colors[1]:
+        points_1_3_out = generateJaggedArc(centre, outer_radius*(1/3), start_angle, end_angle, jag_width, jag_num)
+        points_2_3_in = generateJaggedArc(centre, outer_radius*(2/3), start_angle, end_angle, jag_width, jag_num)
+    else:
+        points_1_3_out = generateJaggedArc(centre, outer_radius*(1/3), start_angle, end_angle, jag_width, jag_num,
+                                            [[centre[0] + outer_radius*(1/3)*sin(start_angle),
+                                              centre[1] - outer_radius*(1/3)*cos(start_angle)],
+                                            [centre[0] + outer_radius*(1/3)*sin(end_angle),
+                                              centre[1] - outer_radius*(1/3)*cos(end_angle)]])
+        points_2_3_in = generateJaggedArc(centre, outer_radius*(2/3), start_angle, end_angle, jag_width, jag_num,
+                                          [[centre[0] + outer_radius*(2/3)*sin(start_angle),
+                                            centre[1] - outer_radius*(2/3)*cos(start_angle)],
+                                            [centre[0] + outer_radius*(2/3)*sin(end_angle),
+                                            centre[1] - outer_radius*(2/3)*cos(end_angle)]])
+
+    if on_colors[2]:
+        points_2_3_out = generateJaggedArc(centre, outer_radius*(2/3), start_angle, end_angle, jag_width, jag_num)
+        points_outer = generateJaggedArc(centre, outer_radius*1.03, start_angle, end_angle, jag_width, jag_num)
+    else:
+        points_2_3_out = generateJaggedArc(centre, outer_radius*(2/3), start_angle, end_angle, jag_width, jag_num,
+                                          [[centre[0] + outer_radius*(2/3)*sin(start_angle),
+                                            centre[1] - outer_radius*(2/3)*cos(start_angle)],
+                                          [centre[0] + outer_radius*(2/3)*sin(end_angle),
+                                            centre[1] - outer_radius*(2/3)*cos(end_angle)]])
+        points_outer = generateJaggedArc(centre, outer_radius, start_angle, end_angle, 0, 20,
+                                          [[centre[0] + outer_radius*sin(start_angle),
+                                            centre[1] - outer_radius*cos(start_angle)],
+                                          [centre[0] + outer_radius*sin(end_angle),
+                                            centre[1] - outer_radius*cos(end_angle)]])
+
+    if on_colors[0]:
+        pygameDrawPolygon(window, on_colors[0], points_1_3_in + points_inner[::-1])
+    else:
+        pygameDrawPolygon(window, off_colors[0], fixed[1] + fixed[0][::-1])
+
+    if on_colors[1]:
+        pygameDrawPolygon(window, on_colors[1], points_2_3_in + points_1_3_out[::-1])
+    else:
+        pygameDrawPolygon(window, off_colors[1], fixed[2] + fixed[1][::-1])
+
+    if on_colors[2]:
+        pygameDrawPolygon(window, on_colors[2], points_outer + points_2_3_out[::-1])
+    else:
+        pygameDrawPolygon(window, off_colors[2], fixed[3] + fixed[2][::-1])
+
+    if on_colors[0]:
+        pygameDrawLines(window, split_color, False, points_inner, split_width)
+        pygameDrawLines(window, split_color, False, points_1_3_in, split_width)
+    else:
+        pygameDrawLines(window, split_color, False, fixed[0], split_width)
+        pygameDrawLines(window, split_color, False, fixed[1], split_width)
+
+    if on_colors[1]:
+        pygameDrawLines(window, split_color, False, points_2_3_in, split_width)
+    else:
+        pygameDrawLines(window, split_color, False, fixed[2], split_width)
+
+    if on_colors[2]:
+        pygameDrawLines(window, split_color, False, points_outer, split_width)
+    else:
+        pygameDrawLines(window, split_color, False, fixed[3], split_width)
+
+    pygameDrawLines(window, split_color, False, [points_inner[0], points_1_3_in[0], points_1_3_out[0],
+                                                 points_2_3_in[0], points_2_3_out[0], points_outer[0]], split_width)
+    pygameDrawLines(window, split_color, False, [points_inner[-1], points_1_3_in[-1], points_1_3_out[-1],
+                                                 points_2_3_in[-1], points_2_3_out[-1], points_outer[-1]], split_width)
+
+def drawSegmentTest(n):
     pygameInit()
     
     FPS = 30 #frames per second setting
@@ -653,17 +679,34 @@ def drawJaggedArcTest():
     # players = ['Josh']
     # players = []
 
-    window = pygameDisplaySet_mode((info.current_w/1.5, (info.current_h-60)/1.5))
+    window = pygameDisplaySet_mode((info.current_w, (info.current_h-60)))
     gradientRect( window, (136/5, 0, 21/5), (240, 0, 36), pygameRect( 0, 0, *window.get_size() ) )
 
-    drawJaggedArc(window, [window.get_size()[i]/2 for i in [0, 1]], window.get_size()[1]*0.4, pygameColors['blue'],
-                  3, 0, pi/10, 0.02, 10)
+    drawDartBoard(window, [window.get_size()[i]/2 for i in [0, 1]], window.get_size()[1]*0.3, pygameColors['white'])
+
+    centre = [window.get_size()[i]/2 for i in [0, 1]]
+    outer_radius, inner_radius = window.get_size()[1]*0.3, window.get_size()[1]*0.3*(16/170)
+    start_angle, end_angle, jag_width, jag_num = pi/20, (3*pi)/20, 0.02, 10
+    fixed = generateJaggedArcsFixed(centre, outer_radius, inner_radius, start_angle, end_angle, jag_width, jag_num)
 
     while True:
         x, y = pygameMouseGet_pos()
         pygameDisplaySet_caption('{}, {}'.format(x, y))
 
-        # test function here
+        window.fill(pygameColors['white'])
+        gradientRect( window, (136/5, 0, 21/5), (240, 0, 36), pygameRect( 0, 0, *window.get_size() ) )
+        drawDartBoard(window, [window.get_size()[i]/2 for i in [0, 1]], window.get_size()[1]*0.3, pygameColors['white'])
+
+        if n == 0:
+            colors = [False, False, False]
+        if n == 1:
+            colors = [pygameColors['red'], False, False]
+        if n == 2:
+            colors = [pygameColors['red'], pygameColors['red'], False]
+        if n == 3:
+            colors = [pygameColors['red'], pygameColors['red'], pygameColors['red']]
+        drawSplitSegment(window, centre, outer_radius, inner_radius, start_angle, end_angle, colors,
+                         [pygameColors['darkred']]*3, pygameColors['black'], 5, jag_width, jag_num, fixed)
 
         pygameDisplayFlip()
 
@@ -673,87 +716,108 @@ def drawJaggedArcTest():
                 pygameQuit()
                 return
 
-def drawSplitSegment(window, centre, outer_radius, inner_radius, start_angle, end_angle, color, split_color,
-                     split_width, jag_width, jag_num):
-    drawSegment(window, centre, outer_radius, inner_radius, start_angle, end_angle, color)
-    drawJaggedArc(window, centre, outer_radius*(2/3), split_color, split_width, start_angle, end_angle, jag_width,
-                  jag_num)
-    drawJaggedArc(window, centre, outer_radius*(1/3), split_color, split_width, start_angle, end_angle, jag_width,
-                  jag_num)
-    drawJaggedArc(window, centre, outer_radius, split_color, split_width, start_angle, end_angle, 0, 20)
-    drawJaggedArc(window, centre, inner_radius, split_color, split_width, start_angle, end_angle, 0, 2)
-    pygameDrawLine(window, split_color, [centre[0]+inner_radius*sin(start_angle), centre[1]-inner_radius*cos(start_angle)],
-                   [centre[0]+outer_radius*sin(start_angle), centre[1]-outer_radius*cos(start_angle)], split_width)
-    pygameDrawLine(window, split_color, [centre[0]+inner_radius*sin(end_angle), centre[1]-inner_radius*cos(end_angle)],
-                   [centre[0]+outer_radius*sin(end_angle), centre[1]-outer_radius*cos(end_angle)], split_width)
+def drawDartBoard(window, centre, radius, color, width=3):
 
-
-def drawSegmentTest():
-    pygameInit()
-    
-    FPS = 30 #frames per second setting
-    fpsClock = pygameTimeClock()
-
-    info = pygameDisplayInfo()
-
-    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
-    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren']
-    # players = ['Josh', 'Ben', 'Luke', 'Rachel']
-    # players = ['Josh', 'Ben', 'Luke']
-    # players = ['Josh', 'Ben']
-    # players = ['Josh']
-    # players = []
-
-    window = pygameDisplaySet_mode((info.current_w/1.5, (info.current_h-60)/1.5))
-    gradientRect( window, (136/5, 0, 21/5), (240, 0, 36), pygameRect( 0, 0, *window.get_size() ) )
-
-    drawDartBoard(window, [window.get_size()[i]/2 for i in [0, 1]], window.get_size()[1]*0.4, pygameColors['white'])
-
-    while True:
-        x, y = pygameMouseGet_pos()
-        pygameDisplaySet_caption('{}, {}'.format(x, y))
-
-        drawSplitSegment(window, [window.get_size()[i]/2 for i in [0, 1]], window.get_size()[1]*0.4, window.get_size()[1]*0.4*(16/170),
-                         pi/20, (3*pi)/20, pygameColors['red'], pygameColors['black'], 4, 0.02, 10)
-
-        pygameDisplayFlip()
-
-        fpsClock.tick(FPS)
-        for event in pygameEventGet():
-            if event.type == pygameLocalsQUIT:
-                pygameQuit()
-                return
-
-def drawDartBoard(window, centre, radius, fore_color, filled=[False]*20, width=1, split_fills=False):
-    board_rect = pygameRect(0, 0, 2*radius, 2*radius)
-    board_rect.center = centre
-    starts = [1.5, 8.5, 10.5, 3.5, 19.5, 5.5, 12.5, 14.5, 17.5, 6.5, 15.5, 18.5, 4.5, 16.5, 7.5, 13.5, 9.5, 2.5, 11.5,
-              0.5]
-    if any(filled):
-        for n, fill in enumerate(filled):
-            if fill:
-                if split_fills:
-                    drawSplitSegment(window, centre, radius, radius*(16/170), (starts[n]/20)*2*pi,
-                                     ((starts[n]-1)/20)*2*pi, fill, split_fills, width+3, 0.02, 10)
-                else:
-                    drawSegment(window, centre, radius, radius*(16/170), (starts[n]/20)*2*pi, ((starts[n]-1)/20)*2*pi,
-                            fill)
-
-    pygameDrawCircle(window, fore_color, centre, radius, width)
-    pygameDrawCircle(window, fore_color, centre, radius*(162/170), width)
-    pygameDrawCircle(window, fore_color, centre, radius*(107/170), width)
-    pygameDrawCircle(window, fore_color, centre, radius*(99/170), width)
-    pygameDrawCircle(window, fore_color, centre, radius*(16/170), width)
-    pygameDrawCircle(window, fore_color, centre, radius*(6.35/170), width)
+    pygameDrawCircle(window, color, centre, radius, width)
+    pygameDrawCircle(window, color, centre, radius*(162/170), width)
+    pygameDrawCircle(window, color, centre, radius*(107/170), width)
+    pygameDrawCircle(window, color, centre, radius*(99/170), width)
+    pygameDrawCircle(window, color, centre, radius*(16/170), width)
+    pygameDrawCircle(window, color, centre, radius*(6.35/170), width)
 
     for angle in range(20):
         inner_x = centre[0] + radius*(16/170)*sin(((angle+0.5)/20)*2*pi)
         inner_y = centre[1] + radius*(16/170)*cos(((angle+0.5)/20)*2*pi)
         outer_x = centre[0] + radius*sin(((angle+0.5)/20)*2*pi)
         outer_y = centre[1] + radius*cos(((angle+0.5)/20)*2*pi)
-        pygameDrawLine(window, fore_color, (inner_x, inner_y), (outer_x, outer_y), width)
+        inner_x += (-1)**(inner_x > centre[0])
+        inner_y += (-1)**(inner_y > centre[1])
+        outer_x += (-1)**(outer_x > centre[0])
+        outer_y += (-1)**(outer_y > centre[1])
+        pygameDrawLine(window, color, (inner_x, inner_y), (outer_x, outer_y), width)
 
-def drawDartBoardTest(n):
+def dartBoardAngles(n):
+    starts = [0.5, 7.5, 9.5, 2.5, 18.5, 4.5, 11.5, 13.5, 16.5, 5.5,
+              14.5, 17.5, 3.5, 15.5, 6.5, 12.5, 8.5, 1.5, 10.5, 19.5]
+    return [((starts[n-1]-0.1)/20)*2*pi, ((starts[n-1]+1.1)/20)*2*pi]
+
+def cartesianFromPolar(centre, radius, angle):
+    x = centre[0] + radius*sin(angle)
+    y = centre[1] - radius*cos(angle)
+    return [x, y]
+
+def drawRoundMarker(window, centre, height, roundNum):
+    drawTextWithOutline(window, 'ROUND', int(window.get_size()[0]/60), [centre[0], centre[1] - height],
+                        pygameColors['white'])
+    for i in range(1, 7)[::-1]:
+        if roundNum < 7 and 7-i == roundNum:
+            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] - (i*height)/7],
+                             window.get_size()[0]/200)
+        else:
+            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] - (i*height)/7],
+                             window.get_size()[0]/200, width=1)
+    drawTextWithOutline(window, '-×2-', int(window.get_size()[0]/60), [centre[0], centre[1]], pygameColors['white'])
+    for i in range(1, 4):
+        if roundNum >= 7 and i+6 == roundNum:
+            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
+                             window.get_size()[0]/200)
+        else:
+            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
+                             window.get_size()[0]/200, width=1)
+    drawTextWithOutline(window, '-×3-', int(window.get_size()[0]/60), [centre[0], centre[1] + (4*height)/7],
+                        pygameColors['white'])
+    for i in range(5, 8)[::-1]:
+        if roundNum >= 7 and i+5 == roundNum:
+            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
+                             window.get_size()[0]/200)
+        else:
+            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
+                             window.get_size()[0]/200, width=1)
+
+
+def drawKiller(window, player, turn, players, positions, segments, roundNum, fixed, dartBoardRadius):
+    gradientRect( window, (136/5, 0, 21/5), (240, 0, 36), pygameRect( 0, 0, *window.get_size() ) )
+    segment_colors = [pygameColors['red'], pygameColors['blue'], pygameColors['green'], pygameColors['yellow'], pygameColors['cyan'], pygameColors['orange']]
+    segment_offcolors = [[j/2.5 for j in i] for i in segment_colors]
+
+    centre = [window.get_size()[i]/2 for i in [0, 1]]
+    drawDartBoard(window, centre, dartBoardRadius, pygameColors['white'])
+
+    for i in range(len(players)):
+        angles = dartBoardAngles(positions[i])
+        drawSplitSegment(window, centre, dartBoardRadius, dartBoardRadius*(16/170),
+                         *angles, [segment_colors[i]]*segments[i] + [False]*(3-segments[i]),
+                         [segment_offcolors[i]]*3, pygameColors['black'], 5, segments[i]*0.01, 10, fixed[i])
+        if segments[i] == 3:
+            skullCentre = cartesianFromPolar(centre, dartBoardRadius*0.85, sum(angles)/2)
+            skullImage_original  = pygameImageLoad('KillerSkull.png').convert()
+            skullImage = pygameTransformScale(skullImage_original, [skullImage_original.get_size()[i]*(dartBoardRadius*0.2/skullImage_original.get_size()[0]) for i in range(2)])
+            skullImage_rotated = pygameTransformRotate(skullImage, -(sum(angles)/2)*(180/pi))
+            new_rect = skullImage_rotated.get_rect(center = skullCentre)
+            window.blit(skullImage_rotated, new_rect, special_flags=pygameBLEND_RGBA_MIN)
+
+        textCentre = cartesianFromPolar(centre, dartBoardRadius*1.2, sum(angles)/2)
+        drawTextWithOutline(window, str(positions[i]), int(window.get_size()[0]/40), textCentre, segment_colors[i],
+                            pygameColors['black'], 2)
+        if positions[i] == 20:
+            picture_x = textCentre[0] + ((-1)**(textCentre[0] < centre[0]))*dartBoardRadius*0.5
+            turnMarker_x = textCentre[0] + ((-1)**(textCentre[0] < centre[0]))*dartBoardRadius*0.8
+        else:
+            picture_x = textCentre[0] + ((-1)**(textCentre[0] < centre[0]))*dartBoardRadius*0.35
+            turnMarker_x = textCentre[0] + ((-1)**(textCentre[0] < centre[0]))*dartBoardRadius*0.65
+
+        profilePicture(window, [picture_x, textCentre[1]], segment_colors[i], players[i], i, window.get_size()[0]/25)
+        if player == players[i]:
+            drawTurnMarkers(window, [turnMarker_x, textCentre[1]], window.get_size()[0]/200, turn,
+                            textCentre[0] > centre[0])
+        else:
+            drawTurnMarkers(window, [turnMarker_x, textCentre[1]], window.get_size()[0]/200, None,
+                            textCentre[0] > centre[0])
+        
+    drawRoundMarker(window, [window.get_size()[0]*0.95, centre[1]], window.get_size()[1]*0.25, roundNum)
+    drawBorders(window, 'Killer', 0.02, window.get_size()[0]/200, pygameColors['white'])
+
+def drawKillerTest():
     pygameInit()
     
     FPS = 30 #frames per second setting
@@ -761,31 +825,34 @@ def drawDartBoardTest(n):
 
     info = pygameDisplayInfo()
 
-    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
+    players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
+    positions = [9, 17, 7, 20, 18, 10]
+    segments = [3, 1, 0, 2, 3, 1]
+    # segments = [3, 3, 3, 3, 3, 3]
     # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren']
     # players = ['Josh', 'Ben', 'Luke', 'Rachel']
     # players = ['Josh', 'Ben', 'Luke']
     # players = ['Josh', 'Ben']
     # players = ['Josh']
     # players = []
+    
+    osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
+    fullscreen = False
+    window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
 
-    filled = []
-    for i in range(20):
-        if i+1 in n:
-            filled.append(pygameColors['blue'])
-        else:
-            filled.append(False)
+    dartBoardRadius = window.get_size()[1]*0.3
 
-    window = pygameDisplaySet_mode((info.current_w/1.5, (info.current_h-60)/1.5))
-
-    drawDartBoard(window, [window.get_size()[i]/2 for i in [0, 1]], window.get_size()[1]*0.4, pygameColors['white'],
-                  filled)
+    fixed = []
+    for i in range(len(players)):
+        fixed.append(generateJaggedArcsFixed([window.get_size()[i]/2 for i in [0, 1]], dartBoardRadius,
+                                             dartBoardRadius*(16/170), *dartBoardAngles(positions[i]),
+                                             0.02, 10))
 
     while True:
         x, y = pygameMouseGet_pos()
-        pygameDisplaySet_caption('{}, {}'.format(x, y))
+        pygameDisplaySet_caption('Darts - Killer')
 
-        # test function here
+        drawKiller(window, players[0], 0, players, positions, segments, 5, fixed, dartBoardRadius)
 
         pygameDisplayFlip()
 
@@ -795,3 +862,27 @@ def drawDartBoardTest(n):
                 pygameQuit()
                 return
 
+            elif event.type == pygameKEYDOWN:
+                if event.key == pygameK_F11:
+                    if fullscreen:
+                        pygameDisplayQuit()
+                        osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
+                        pygameDisplayInit()
+                        window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
+                    else:
+                        pygameDisplayQuit()
+                        osEnviron['SDL_VIDEO_WINDOW_POS'] = "0,0"
+                        pygameDisplayInit()
+                        window = pygameDisplaySet_mode((info.current_w, info.current_h), pygameRESIZABLE)
+                    fullscreen = not fullscreen
+
+            elif event.type == pygameVIDEORESIZE:
+                window = pygameDisplaySet_mode((event.w, event.h), pygameRESIZABLE)
+
+                dartBoardRadius = window.get_size()[1]*0.35
+            
+                fixed = []
+                for i in range(len(players)):
+                    fixed.append(generateJaggedArcsFixed([window.get_size()[i]/2 for i in [0, 1]], dartBoardRadius,
+                                                         dartBoardRadius*(16/170), *dartBoardAngles(positions[i]),
+                                                         0.02, 10))

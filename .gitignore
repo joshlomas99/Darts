@@ -4,3 +4,7 @@ Pictures/*
 !Pictures/Blank*
 *.svg
 *.ico
+*Test.py
+build*
+dist*
+*.spec

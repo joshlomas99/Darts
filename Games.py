@@ -132,9 +132,10 @@ class Killer:
 
     def play(self):
         player, Round, multiplier = 0, 1, 1
-        print('#############\nRound {0}     #\n#############'.format(Round))
         gameOver = False
         while not gameOver and Round <= self.max_round:
+            if player == 0:
+                print('#############\nRound {0}     #\n#############'.format(Round))
             # pygameTimeClock().tick(30)
             # for event in pygameEventGet():
             #     if event.type == QUIT:
@@ -145,33 +146,27 @@ class Killer:
             if player >= len(self.players):
                 player = 0
                 Round += 1
-                print('#############\nRound {0}     #\n#############'.format(Round))
                 if Round == 7:
                     multiplier = 2
                 elif Round == 10:
                     multiplier = 3
 
         if gameOver:
-            print('{0} wins!'.format(self.players[0]))
+            print('\n{0} wins!'.format(self.players[0]))
         else:
             if self.segments.count(max(self.segments)) == 1:
-                print('{0} wins!'.format(self.players[self.segments.index(max(self.segments))]))
+                print('\n{0} wins!'.format(self.players[self.segments.index(max(self.segments))]))
             else:
                 winners = []
                 for n, seg in enumerate(self.segments):
                     if seg == max(self.segments):
                         winners.append(self.players[n])
-                out = ''
+                out = '\n'
                 for winner in winners[:-1]:
                     out += winner + ', '
                 print(out[:-2] + ' and ' + winners[-1] + ' win!')
-                print(out)
-        return 0
 
 class RoundtheWorld:
-    pass
-
-class Shanghai:
     pass
 
 class SnakesandLadders:
@@ -183,5 +178,4 @@ class DonkeyDerby:
 class QuackShot:
     pass
 
-['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
-[9, 15, 3, 16, 18, 5]
+[9, 17, 7, 20, 18, 10]

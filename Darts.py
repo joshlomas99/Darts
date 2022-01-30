@@ -38,7 +38,6 @@ def main():
     # players = ['Josh']
     players = []
 
-    # window = pygameDisplaySet_mode((0, 0), pygameRESIZABLE, pygame.FULLSCREEN)
     fullscreen = False
     osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
     window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
@@ -129,12 +128,12 @@ def main():
                 elif event.type == pygameKEYDOWN:
                     if event.key == pygameK_F11:
                         if fullscreen:
-                            pygameDisplayQuit
+                            pygameDisplayQuit()
                             osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
                             pygameDisplayInit()
                             window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
                         else:
-                            pygameDisplayQuit
+                            pygameDisplayQuit()
                             osEnviron['SDL_VIDEO_WINDOW_POS'] = "0,0"
                             pygameDisplayInit()
                             window = pygameDisplaySet_mode((info.current_w, info.current_h), pygameRESIZABLE)
@@ -206,12 +205,12 @@ def main():
 
                     if event.key == pygameK_F11:
                         if fullscreen:
-                            pygameDisplayQuit
+                            pygameDisplayQuit()
                             osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
                             pygameDisplayInit()
                             window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
                         else:
-                            pygameDisplayQuit
+                            pygameDisplayQuit()
                             osEnviron['SDL_VIDEO_WINDOW_POS'] = "0,0"
                             pygameDisplayInit()
                             window = pygameDisplaySet_mode((info.current_w, info.current_h), pygameRESIZABLE)
@@ -271,12 +270,12 @@ def main():
                         menu = 'main'
                     if event.key == pygameK_F11:
                         if fullscreen:
-                            pygameDisplayQuit
+                            pygameDisplayQuit()
                             osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
                             pygameDisplayInit()
                             window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
                         else:
-                            pygameDisplayQuit
+                            pygameDisplayQuit()
                             osEnviron['SDL_VIDEO_WINDOW_POS'] = "0,0"
                             pygameDisplayInit()
                             window = pygameDisplaySet_mode((info.current_w, info.current_h), pygameRESIZABLE)
