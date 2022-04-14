@@ -1,15 +1,6 @@
-from os import environ as osEnviron
-from sys import exit as sysExit
-from pygame import init as pygameInit, quit as pygameQuit
-from pygame import VIDEORESIZE as pygameVIDEORESIZE, RESIZABLE as pygameRESIZABLE, KEYDOWN as pygameKEYDOWN
-from pygame import MOUSEBUTTONDOWN as pygameMOUSEBUTTONDOWN, K_ESCAPE as pygameK_ESCAPE, K_F11 as pygameK_F11
-from pygame.time import Clock as pygameTimeClock
-from pygame.display import Info as pygameDisplayInfo, set_mode as pygameDisplaySet_mode
-from pygame.display import set_caption as pygameDisplaySet_caption, flip as pygameDisplayFlip
-from pygame.display import list_modes as pygameDisplayList_modes, init as pygameDisplayInit, quit as pygameDisplayQuit
-from pygame.event import get as pygameEventGet
-from pygame.mouse import get_pos as pygameMouseGet_pos
-from pygame.locals import QUIT as pygameLocalsQUIT
+import os, sys, time
+import pygame
+from pygame.locals import QUIT
 from pygame.color import THECOLORS as pygameColors
 from pygameGUIs import drawMenu, drawGameMenu, drawSettingsMenu, addPlayer, drawCross, drawUnderlineWithOutline
 from Games import Demolition
@@ -17,15 +8,15 @@ maximised_res = (1536, 801)
 maximised_pos = "0,20"
 
 def main():
-    pygameInit()
+    pygame.init()
     
     FPS = 30 #frames per second setting
-    fpsClock = pygameTimeClock()
+    fpsClock = pygame.time.Clock()
 
-    info = pygameDisplayInfo()
+    info = pygame.display.Info()
 
     resolutions, resolution_index = [], -1
-    for resolution in pygameDisplayList_modes():
+    for resolution in pygame.display.list_modes():
         resolutions.append(' × '.join([str(i) for i in resolution]))
     resolutions.reverse()
     curr_resolution = resolutions[resolution_index]
@@ -39,8 +30,8 @@ def main():
     players = []
 
     fullscreen = False
-    osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
-    window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
+    os.environ['SDL_VIDEO_WINDOW_POS'] = maximised_pos
+    window = pygame.display.set_mode(maximised_res, pygame.RESIZABLE)
 
     buttons = drawMenu(window, players)
     play_button_size, play_text_rect_obj_center = buttons[0], buttons[1]
@@ -50,12 +41,13 @@ def main():
     crossDims = buttons[8]
 
     menu = 'main'
+    numFrames, frameCheck = 0, time.time()
 
     while True:
         underline_thickness = 2*(int(max(window.get_size())/500) + 1)
         if menu == 'main':
-            x, y = pygameMouseGet_pos()
-            pygameDisplaySet_caption('Darts - Menu')
+            x, y = pygame.mouse.get_pos()
+            pygame.display.set_caption('Darts - Menu')
     
             buttons = drawMenu(window, players)
             play_button_size, play_text_rect_obj_center = buttons[0], buttons[1]
@@ -94,15 +86,20 @@ def main():
                                      pygameColors['white'], pygameColors['black'], 2)
                 mouse_on_quit = True
     
-            pygameDisplayFlip()
+            pygame.display.flip()
     
             fpsClock.tick(FPS)
-            for event in pygameEventGet():
-                if event.type == pygameLocalsQUIT:
-                    pygameQuit()
+            numFrames += 1
+            if time.time() - frameCheck > 1:
+                pygame.display.set_caption('Darts - Menu - {0} fps'.format(numFrames))
+                numFrames, frameCheck = 0, time.time()
+
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
                     return
     
-                elif event.type == pygameMOUSEBUTTONDOWN:
+                elif event.type == pygame.MOUSEBUTTONDOWN:
                     if mouse_on_play:
                         menu = 'play'
                         
@@ -122,29 +119,29 @@ def main():
                         players.pop(mouse_on_cross.index(True))
 
                     if mouse_on_quit:
-                        pygameQuit()
+                        pygame.quit()
                         return
 
-                elif event.type == pygameKEYDOWN:
-                    if event.key == pygameK_F11:
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_F11:
                         if fullscreen:
-                            pygameDisplayQuit()
-                            osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
-                            pygameDisplayInit()
-                            window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = maximised_pos
+                            pygame.display.init()
+                            window = pygame.display.set_mode(maximised_res, pygame.RESIZABLE)
                         else:
-                            pygameDisplayQuit()
-                            osEnviron['SDL_VIDEO_WINDOW_POS'] = "0,0"
-                            pygameDisplayInit()
-                            window = pygameDisplaySet_mode((info.current_w, info.current_h), pygameRESIZABLE)
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
+                            pygame.display.init()
+                            window = pygame.display.set_mode((info.current_w, info.current_h), pygame.RESIZABLE)
                         fullscreen = not fullscreen
 
-                elif event.type == pygameVIDEORESIZE:
-                    window = pygameDisplaySet_mode((event.w, event.h), pygameRESIZABLE)
+                elif event.type == pygame.VIDEORESIZE:
+                    window = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
         if menu == 'settings':
-            x, y = pygameMouseGet_pos()
-            pygameDisplaySet_caption('Darts - Settings')
+            x, y = pygame.mouse.get_pos()
+            pygame.display.set_caption('Darts - Settings')
 
             mouse_on_leftButton, mouse_on_rightButton, mouse_on_back, mouse_on_apply = False, False, False, False
             if abs(x - leftButton_center[0]) <= leftButton_button_size[0]/2 and abs(y - leftButton_center[1]) <= leftButton_button_size[1]/2:
@@ -168,15 +165,20 @@ def main():
                                      pygameColors['white'], pygameColors['black'], 2)
                 mouse_on_apply = True
     
-            pygameDisplayFlip()
+            pygame.display.flip()
     
             fpsClock.tick(FPS)
-            for event in pygameEventGet():
-                if event.type == pygameLocalsQUIT:
-                    pygameQuit()
+            numFrames += 1
+            if time.time() - frameCheck > 1:
+                pygame.display.set_caption('Darts - Settings - {0} fps'.format(numFrames))
+                numFrames, frameCheck = 0, time.time()
+
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
                     return
     
-                elif event.type == pygameMOUSEBUTTONDOWN:
+                elif event.type == pygame.MOUSEBUTTONDOWN:
                     if mouse_on_leftButton:
                         resolution_index -= 1
                         resolution_index %= len(resolutions)
@@ -188,7 +190,7 @@ def main():
                     if mouse_on_apply:
                         if curr_resolution != resolutions[resolution_index]:
                             new_res_ratio = int(resolutions[-1].split(' × ')[0])/int(resolutions[resolution_index].split(' × ')[0])
-                            window = pygameDisplaySet_mode([res/new_res_ratio for res in maximised_res], pygameRESIZABLE)
+                            window = pygame.display.set_mode([res/new_res_ratio for res in maximised_res], pygame.RESIZABLE)
                             buttons = drawSettingsMenu(window, resolutions[resolution_index], False, False)
                             leftButton_center, leftButton_button_size = buttons[0], buttons[1]
                             rightButton_center, rightButton_button_size = buttons[2], buttons[3]
@@ -199,29 +201,29 @@ def main():
                     if mouse_on_back:
                         menu = 'main'
     
-                elif event.type == pygameKEYDOWN:
-                    if event.key == pygameK_ESCAPE:
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
                         menu = 'main'
 
-                    if event.key == pygameK_F11:
+                    if event.key == pygame.K_F11:
                         if fullscreen:
-                            pygameDisplayQuit()
-                            osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
-                            pygameDisplayInit()
-                            window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = maximised_pos
+                            pygame.display.init()
+                            window = pygame.display.set_mode(maximised_res, pygame.RESIZABLE)
                         else:
-                            pygameDisplayQuit()
-                            osEnviron['SDL_VIDEO_WINDOW_POS'] = "0,0"
-                            pygameDisplayInit()
-                            window = pygameDisplaySet_mode((info.current_w, info.current_h), pygameRESIZABLE)
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
+                            pygame.display.init()
+                            window = pygame.display.set_mode((info.current_w, info.current_h), pygame.RESIZABLE)
                         fullscreen = not fullscreen
 
-                elif event.type == pygameVIDEORESIZE:
-                    window = pygameDisplaySet_mode((event.w, event.h), pygameRESIZABLE)
+                elif event.type == pygame.VIDEORESIZE:
+                    window = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
         if menu == 'play':
-            x, y = pygameMouseGet_pos()
-            pygameDisplaySet_caption('Darts - Play')
+            x, y = pygame.mouse.get_pos()
+            pygame.display.set_caption('Darts - Play')
     
             buttons = drawGameMenu(window, players)
             demolition_button_size, demolition_text_rect_obj_center = buttons[0], buttons[1]
@@ -244,18 +246,23 @@ def main():
                                      pygameColors['white'], pygameColors['black'], 2)
                 mouse_on_back = True
     
-            pygameDisplayFlip()
+            pygame.display.flip()
     
             fpsClock.tick(FPS)
-            for event in pygameEventGet():
-                if event.type == pygameLocalsQUIT:
-                    pygameQuit()
+            numFrames += 1
+            if time.time() - frameCheck > 1:
+                pygame.display.set_caption('Darts - Play - {0} fps'.format(numFrames))
+                numFrames, frameCheck = 0, time.time()
+
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
                     return
     
-                elif event.type == pygameMOUSEBUTTONDOWN:
+                elif event.type == pygame.MOUSEBUTTONDOWN:
                     if mouse_on_demolition:
-                        pygameDisplaySet_caption('Darts - Demolition')
-                        game = Demolition(window, players)
+                        pygame.display.set_caption('Darts - Demolition')
+                        game = Demolition(window, players, fpsClock, FPS)
                         game.play()
                         menu = 'play'
                         
@@ -265,28 +272,28 @@ def main():
                     if mouse_on_back:
                         menu = 'main'
     
-                elif event.type == pygameKEYDOWN:
-                    if event.key == pygameK_ESCAPE:
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
                         menu = 'main'
-                    if event.key == pygameK_F11:
+                    if event.key == pygame.K_F11:
                         if fullscreen:
-                            pygameDisplayQuit()
-                            osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
-                            pygameDisplayInit()
-                            window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = maximised_pos
+                            pygame.display.init()
+                            window = pygame.display.set_mode(maximised_res, pygame.RESIZABLE)
                         else:
-                            pygameDisplayQuit()
-                            osEnviron['SDL_VIDEO_WINDOW_POS'] = "0,0"
-                            pygameDisplayInit()
-                            window = pygameDisplaySet_mode((info.current_w, info.current_h), pygameRESIZABLE)
+                            pygame.display.quit()
+                            os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
+                            pygame.display.init()
+                            window = pygame.display.set_mode((info.current_w, info.current_h), pygame.RESIZABLE)
                         fullscreen = not fullscreen
 
-                elif event.type == pygameVIDEORESIZE:
-                    window = pygameDisplaySet_mode((event.w, event.h), pygameRESIZABLE)
+                elif event.type == pygame.VIDEORESIZE:
+                    window = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
 if __name__ == "__main__":
     try:
         main()
 
     except KeyboardInterrupt:
-        sysExit(1)
+        sys.exit(1)

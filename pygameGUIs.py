@@ -1,26 +1,10 @@
 from os import environ as osEnviron
-from time import sleep
+import time, sys
 from math import sin, cos, pi
 from random import random
-from pygame import init as pygameInit, quit as pygameQuit, Surface as pygameSurface, Rect as pygameRect
-from pygame import SRCALPHA as pygameSRCALPHA, BLEND_RGBA_MIN as pygameBLEND_RGBA_MIN
-from pygame import RESIZABLE as pygameRESIZABLE, MOUSEBUTTONDOWN as pygameMOUSEBUTTONDOWN, K_F11 as pygameK_F11
-from pygame import KEYDOWN as pygameKEYDOWN, K_ESCAPE as pygameK_ESCAPE, K_RETURN as pygameK_RETURN
-from pygame import K_BACKSPACE as pygameK_BACKSPACE, BLEND_RGBA_MAX as pygameBLEND_RGBA_MAX
-from pygame import VIDEORESIZE as pygameVIDEORESIZE
-from pygame.time import Clock as pygameTimeClock
-from pygame.display import Info as pygameDisplayInfo, set_mode as pygameDisplaySet_mode
-from pygame.display import set_caption as pygameDisplaySet_caption, flip as pygameDisplayFlip
-from pygame.display import list_modes as pygameDisplayList_modes, init as pygameDisplayInit, quit as pygameDisplayQuit
-from pygame.event import get as pygameEventGet
-from pygame.mouse import get_pos as pygameMouseGet_pos
-from pygame.draw import line as pygameDrawLine, circle as pygameDrawCircle, polygon as pygameDrawPolygon
-from pygame.draw import rect as pygameDrawRect, lines as pygameDrawLines, arc as pygameDrawArc
-from pygame.transform import smoothscale as pygameTransformSmoothscale, scale as pygameTransformScale
-from pygame.transform import rotate as pygameTransformRotate
-from pygame.image import load as pygameImageLoad
-from pygame.font import Font as pygameFontFont
-from pygame.locals import QUIT as pygameLocalsQUIT
+import threading
+import pygame
+from pygame.locals import QUIT
 from pygame.color import THECOLORS as pygameColors
 maximised_res = (1536, 801)
 maximised_pos = "0,20"
@@ -30,12 +14,12 @@ maximised_pos = "0,20"
 # os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 def blankTestFunction():
-    pygameInit()
+    pygame.init()
     
     FPS = 30 #frames per second setting
-    fpsClock = pygameTimeClock()
+    fpsClock = pygame.time.Clock()
 
-    info = pygameDisplayInfo()
+    info = pygame.display.Info()
 
     # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
     # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren']
@@ -45,52 +29,52 @@ def blankTestFunction():
     # players = ['Josh']
     # players = []
 
-    window = pygameDisplaySet_mode((info.current_w/2, (info.current_h-60)/2))
+    window = pygame.display.set_mode((info.current_w/2, (info.current_h-60)/2))
 
     # test function here
 
     while True:
-        x, y = pygameMouseGet_pos()
-        pygameDisplaySet_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
+        x, y = pygame.mouse.get_pos()
+        pygame.display.set_caption('{}, {} - {}, {}'.format(x, y, abs(x - window.get_size()[0]/2), abs(y - window.get_size()[1]/2)))
 
         # test function here
 
-        pygameDisplayFlip()
+        pygame.display.flip()
 
         fpsClock.tick(FPS)
-        for event in pygameEventGet():
-            if event.type == pygameLocalsQUIT:
-                pygameQuit()
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
                 return
 
 def gradientRect(window, top_colour, bottom_colour, target_rect):
-    colour_rect = pygameSurface((2, 2))
-    pygameDrawLine(colour_rect, top_colour, (0, 0), (1, 0))
-    pygameDrawLine(colour_rect, bottom_colour, (0, 1), (1, 1))
-    colour_rect = pygameTransformSmoothscale(colour_rect, (target_rect.width, target_rect.height))
+    colour_rect = pygame.Surface((2, 2))
+    pygame.draw.line(colour_rect, top_colour, (0, 0), (1, 0))
+    pygame.draw.line(colour_rect, bottom_colour, (0, 1), (1, 1))
+    colour_rect = pygame.transform.smoothscale(colour_rect, (target_rect.width, target_rect.height))
     window.blit(colour_rect, target_rect)
 
 def profilePicture(window, centre, color, player, playerNum, width=None):
     if width == None:
         width = window.get_size()[0]/15
     try:
-        image_original  = pygameImageLoad('Pictures/' + player + '.png').convert()
+        image_original  = pygame.image.load('Pictures/' + player + '.png').convert()
     except:
-        image_original  = pygameImageLoad(f'Pictures/Blank{playerNum+1}.png').convert()
-    image = pygameTransformScale(image_original, [image_original.get_size()[i]*(width/image_original.get_size()[0]) for i in range(2)])
-    cropped_image  = pygameSurface((max(image.get_size()), max(image.get_size())), pygameSRCALPHA)
+        image_original  = pygame.image.load(f'Pictures/Blank{playerNum+1}.png').convert()
+    image = pygame.transform.scale(image_original, [image_original.get_size()[i]*(width/image_original.get_size()[0]) for i in range(2)])
+    cropped_image  = pygame.Surface((max(image.get_size()), max(image.get_size())), pygame.SRCALPHA)
 
     image_pos = [centre[i] - max(image.get_size())/2 for i in range(2)]
 
     color = (*color[:3], color[3])
-    pygameDrawCircle(window, color, [i + max(image.get_size())/2 for i in image_pos], min(image.get_size())/1.75)
+    pygame.draw.circle(window, color, [i + max(image.get_size())/2 for i in image_pos], min(image.get_size())/1.75)
 
-    pygameDrawCircle(cropped_image, (255, 255, 255, 255), [i/2 for i in cropped_image.get_size()], min(image.get_size())/2)
-    cropped_image.blit(image, [(max(image.get_size()) - image.get_size()[i])/2 for i in range(2)], special_flags=pygameBLEND_RGBA_MIN)
+    pygame.draw.circle(cropped_image, (255, 255, 255, 255), [i/2 for i in cropped_image.get_size()], min(image.get_size())/2)
+    cropped_image.blit(image, [(max(image.get_size()) - image.get_size()[i])/2 for i in range(2)], special_flags=pygame.BLEND_RGBA_MIN)
 
     window.blit(cropped_image, image_pos)
 
-    font_obj = pygameFontFont('freesansbold.ttf', int(width/3))
+    font_obj = pygame.font.SysFont('system', int(width/2))
     text_surface_obj = font_obj.render(player, True, pygameColors['white'])
     text_rect_obj = text_surface_obj.get_rect()
     text_rect_obj.center = (centre[0], centre[1] + width*0.9)
@@ -99,7 +83,7 @@ def profilePicture(window, centre, color, player, playerNum, width=None):
 
 def drawDiamond(window, color, centre, radius):
     points = [[centre[0]-radius, centre[1]], [centre[0], centre[1]+radius], [centre[0]+radius, centre[1]], [centre[0], centre[1]-radius]]
-    pygameDrawPolygon(window, color, points)
+    pygame.draw.polygon(window, color, points)
 
 def drawHalfDiamond(window, color, centre, radius, side):
     if side == 'left':
@@ -108,7 +92,7 @@ def drawHalfDiamond(window, color, centre, radius, side):
         points = [[centre[0]-radius, centre[1]], [centre[0], centre[1]+radius], [centre[0], centre[1]-radius]]
     elif side == 'top':
         points = [[centre[0]-radius, centre[1]], [centre[0], centre[1]+radius], [centre[0]+radius, centre[1]]]
-    pygameDrawPolygon(window, color, points)
+    pygame.draw.polygon(window, color, points)
 
 def drawTower(window, color, off_color, bottom_centre, score, radius, gap=3):
     count, score_row = 0, -1
@@ -164,7 +148,7 @@ def drawTower(window, color, off_color, bottom_centre, score, radius, gap=3):
                         score_row = 1*row
                         color = off_color
 
-    font_obj = pygameFontFont('freesansbold.ttf', int(window.get_size()[0]/30))
+    font_obj = pygame.font.SysFont('system', int(window.get_size()[0]/20))
     text_surface_obj = font_obj.render(str(score), True, pygameColors['white'])
     text_rect_obj = text_surface_obj.get_rect()
     text_rect_obj.center = (bottom_centre[0], bottom_centre[1] - ((score_row+3)*(radius+gap)))
@@ -179,17 +163,17 @@ def drawTurnMarker(window, centre, radius, filled=False, left=True):
         # top right, top left, bottom left, bottom right, centre double right
         points = [[centre[0] + radius, centre[1] - radius], [centre[0] - radius, centre[1] - radius], [centre[0] - radius, centre[1] + radius], [centre[0] + radius, centre[1] + radius], [centre[0] + 2*radius, centre[1]]]
     if filled:
-        pygameDrawPolygon(window, pygameColors['white'], points)
+        pygame.draw.polygon(window, pygameColors['white'], points)
     else:
-        pygameDrawPolygon(window, pygameColors['white'], points, width=1)
+        pygame.draw.polygon(window, pygameColors['white'], points, width=1)
 
 def drawTurnMarkers(window, centre, radius, turn=None, left=True):
     for t, height in enumerate([centre[1] - 3*radius, centre[1], centre[1] + 3*radius]):
         drawTurnMarker(window, [centre[0], height], radius, t == turn, left)
 
-def drawDemolition(window, player, turn, players, scores):
+def drawDemolition(window, player, turn, players, scores, FPS=30):
     window.fill([255,255,255])
-    gradientRect( window, (95, 4, 107), (152, 88, 182), pygameRect( 0, 0, *window.get_size() ) )
+    gradientRect( window, (95, 4, 107), (152, 88, 182), pygame.Rect( 0, 0, *window.get_size() ) )
     centres = [[window.get_size()[0]*(i/len(players) - (1-((len(players)-1)*(1/len(players))))/2), window.get_size()[1]*0.7 + (window.get_size()[1]*0.05*(len(players) < 6))] for i in range(1, (len(players)+1))]
     tower_colors = [pygameColors['red'], pygameColors['blue'], pygameColors['green'], pygameColors['yellow'], pygameColors['cyan'], pygameColors['orange']]
     tower_offcolors = [[j/2.5 for j in i] for i in tower_colors]
@@ -198,7 +182,7 @@ def drawDemolition(window, player, turn, players, scores):
         radius = window.get_size()[0]/250
     elif len(players) > 6:
         print('Too many players!')
-        pygameQuit()
+        pygame.quit()
         return
     else:
         radius = window.get_size()[0]/200
@@ -212,7 +196,62 @@ def drawDemolition(window, player, turn, players, scores):
         drawTower(window, tower_colors[i], tower_offcolors[i], [centres[i][0], centres[i][1] - window.get_size()[1]*0.2], scores[i], radius)
 
     drawBorders(window, 'Demolition', 0.02, radius, pygameColors['white'])
-    pygameDisplayFlip()
+    pygame.display.flip()
+
+def inputScoreDemolition(window, player, turn, players, scores, FPS=30):
+    centres = [[window.get_size()[0]*(i/len(players) - (1-((len(players)-1)*(1/len(players))))/2), window.get_size()[1]*0.7 + (window.get_size()[1]*0.05*(len(players) < 6))] for i in range(1, (len(players)+1))]
+    tower_colors = [pygameColors['red'], pygameColors['blue'], pygameColors['green'], pygameColors['yellow'], pygameColors['cyan'], pygameColors['orange']]
+    tower_offcolors = [[j/2.5 for j in i] for i in tower_colors]
+
+    font = pygame.font.SysFont('system', int(window.get_size()[0]/30))
+    fpsClock = pygame.time.Clock()
+    width, height = window.get_size()[0]/10, window.get_size()[1]/10
+    input_box_centre = [centres[turn][0], centres[turn][1] + window.get_size()[1]/5]
+    input_box = pygame.Rect(*input_box_centre, width, height)
+    input_box.center = input_box_centre
+    color_inactive = tower_offcolors[turn]
+    color_active = tower_colors[turn]
+    color = color_active
+    active = True
+    text = ''
+
+    pygame.display.flip()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                return
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if input_box.collidepoint(event.pos):
+                    active = not active
+                else:
+                    active = False
+                color = color_active if active else color_inactive
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return []
+                if active:
+                    if event.key == pygame.K_RETURN:
+                        pygame.quit()
+                        return text
+                    elif event.key == pygame.K_BACKSPACE:
+                        text = text[:-1]
+                    elif (len(text) < 1 and event.unicode) and ...:
+                        text += event.unicode
+
+        drawDemolition(window, player, turn, players, scores, FPS)
+        txt_surface = font.render(text, True, tower_colors[turn])
+        height = txt_surface.get_height()+10
+        input_box.h = height
+        input_box.center = input_box_centre
+        window.blit(txt_surface, [input_box_centre[i] - txt_surface.get_size()[i]/2 for i in range(2)])
+        # pygame.draw.rect(window, pygameColors['white'], input_box)
+        pygame.draw.rect(window, color, input_box, 2)
+
+        pygame.display.flip()
+        fpsClock.tick(FPS)
+
 
 def updateScoreDemolition(window, player, turn, new_score, players, scores):
     old_score = scores[players.index(player)]
@@ -222,19 +261,19 @@ def updateScoreDemolition(window, player, turn, new_score, players, scores):
         return
     else:
         while scores[players.index(player)] > new_score:
-            pygameEventGet()
+            pygame.event.get()
             scores[players.index(player)] -= 1
             drawDemolition(window, player, turn, players, scores)
-            sleep(((min_delay - max_delay)/(old_score-new_score))*abs(scores[players.index(player)]-new_score+1)-(((min_delay - max_delay)/(old_score-new_score))*abs(old_score+1-new_score+1)))
-            # sleep(((np.sqrt(max_delay)/(old_score-new_score+1))*(old_score-scores[players.index(player)]+1))**2)
+            time.sleep(((min_delay - max_delay)/(old_score-new_score))*abs(scores[players.index(player)]-new_score+1)-(((min_delay - max_delay)/(old_score-new_score))*abs(old_score+1-new_score+1)))
+            # time.sleep(((np.sqrt(max_delay)/(old_score-new_score+1))*(old_score-scores[players.index(player)]+1))**2)
 
     return scores
 
 def drawCross(window, centre, radius, back_color, fore_color):
-    pygameDrawCircle(window, back_color, centre, radius)
-    pygameDrawCircle(window, fore_color, centre, radius, width=1)
-    pygameDrawLine(window, fore_color, [centre[i] - (int(radius/(2**0.5)) - 1) for i in range(2)], [centre[i] + (int(radius/(2**0.5)) - 1) for i in range(2)])
-    pygameDrawLine(window, fore_color, [centre[0] - (int(radius/(2**0.5)) - 1), centre[1] + (int(radius/(2**0.5)) - 1)], [centre[0] + (int(radius/(2**0.5)) - 1), centre[1] - (int(radius/(2**0.5)) - 1)])
+    pygame.draw.circle(window, back_color, centre, radius)
+    pygame.draw.circle(window, fore_color, centre, radius, width=1)
+    pygame.draw.line(window, fore_color, [centre[i] - (int(radius/(2**0.5)) - 1) for i in range(2)], [centre[i] + (int(radius/(2**0.5)) - 1) for i in range(2)])
+    pygame.draw.line(window, fore_color, [centre[0] - (int(radius/(2**0.5)) - 1), centre[1] + (int(radius/(2**0.5)) - 1)], [centre[0] + (int(radius/(2**0.5)) - 1), centre[1] - (int(radius/(2**0.5)) - 1)])
 
 _circle_cache = {}
 def _circlepoints(r):
@@ -258,7 +297,7 @@ def _circlepoints(r):
     return points
 
 def drawTextWithOutline(window, text, fontsize, centre, color, outline_color=None, outline_thickness=2, blit=True):
-    font = pygameFontFont('freesansbold.ttf', fontsize)
+    font = pygame.font.SysFont('system', fontsize)
     text_surface_obj = font.render(text, True, color).convert_alpha()
     text_rect_obj = text_surface_obj.get_rect()
     text_rect_obj.center = centre
@@ -280,10 +319,10 @@ def drawLineWithOutline(window, centre, width, thickness, color, outline_color=N
         if outline_color != None:
             for dx, dy in _circlepoints(outline_thickness):
                 point_left, point_right = [centre[0] - width/2 + dx + 1, centre[1] + dy - 1], [centre[0] + width/2 + dx + 1, centre[1] + dy - 1]
-                pygameDrawLine(window, outline_color, point_left, point_right, thickness)
+                pygame.draw.line(window, outline_color, point_left, point_right, thickness)
         
         point_left, point_right = [centre[0] - width/2, centre[1]], [centre[0] + width/2, centre[1]]
-        pygameDrawLine(window, color, point_left, point_right, thickness)
+        pygame.draw.line(window, color, point_left, point_right, thickness)
 
 def drawUnderlineWithOutline(window, text_rect_obj_center, button_size, thickness, color, outline_color=None, outline_thickness=2, direction='horizontal'):
     if direction == 'horizontal':
@@ -294,11 +333,11 @@ def drawRectWithOutline(window, rect, color, outline_color, outline_thickness):
     outline_rect.w += 2*outline_thickness
     outline_rect.h += 2*outline_thickness
     outline_rect.center = rect.center
-    pygameDrawRect(window, outline_color, outline_rect)
-    pygameDrawRect(window, color, rect)
+    pygame.draw.rect(window, outline_color, outline_rect)
+    pygame.draw.rect(window, color, rect)
 
 def drawArrowSelector(window, centre, fontsize, width, curr_option, fore_color, back_color, leftHover=False, rightHover=False):
-    font = pygameFontFont('freesansbold.ttf', fontsize)
+    font = pygame.font.SysFont('system', fontsize)
     text_surface_obj = font.render(curr_option, True, fore_color).convert_alpha()
     text_rect_obj = text_surface_obj.get_rect()
     text_rect_obj.center = centre
@@ -310,9 +349,9 @@ def drawArrowSelector(window, centre, fontsize, width, curr_option, fore_color, 
 
     drawRectWithOutline(window, box_rect_obj, back_color, fore_color, 2)
     if leftHover:
-        pygameDrawRect(window, pygameColors['grey40'], pygameRect([leftButton_center[i] - leftButton_button_size[i]/2 for i in [0, 1]], leftButton_button_size))
+        pygame.draw.rect(window, pygameColors['grey40'], pygame.Rect([leftButton_center[i] - leftButton_button_size[i]/2 for i in [0, 1]], leftButton_button_size))
     if rightHover:
-        pygameDrawRect(window, pygameColors['grey40'], pygameRect([rightButton_center[i] - rightButton_button_size[i]/2 for i in [0, 1]], rightButton_button_size))
+        pygame.draw.rect(window, pygameColors['grey40'], pygame.Rect([rightButton_center[i] - rightButton_button_size[i]/2 for i in [0, 1]], rightButton_button_size))
     window.blit(text_surface_obj, text_rect_obj)
     drawHalfDiamond(window, fore_color, [centre[0] - (width/2)*0.9, centre[1]], (box_rect_obj.h/2)*0.6, 'right')
     drawHalfDiamond(window, fore_color, [centre[0] + (width/2)*0.9, centre[1]], (box_rect_obj.h/2)*0.6, 'left')
@@ -320,16 +359,16 @@ def drawArrowSelector(window, centre, fontsize, width, curr_option, fore_color, 
     return leftButton_center, leftButton_button_size, rightButton_center, rightButton_button_size
 
 def drawBorders(window, title, margin, radius, color, outline_color=None):
-    title_font_obj = pygameFontFont('freesansbold.ttf', int(window.get_size()[0]/50))
+    title_font_obj = pygame.font.SysFont('system', int(window.get_size()[0]/40))
     title_text_surface_obj = title_font_obj.render(title, True, pygameColors['white'])
     title_text_rect_obj = title_text_surface_obj.get_rect()
     title_text_rect_obj_center = (window.get_size()[0]/2, max(window.get_size())*margin)
-    drawTextWithOutline(window, title, int(window.get_size()[0]/50), title_text_rect_obj_center, color,
+    drawTextWithOutline(window, title, int(window.get_size()[0]/40), title_text_rect_obj_center, color,
                     outline_color, 2)
 
-    pygameDrawLine(window, pygameColors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0]/2 - title_text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
-    pygameDrawLine(window, pygameColors['white'], [window.get_size()[0]/2 + title_text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0] - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
-    pygameDrawLine(window, pygameColors['white'], [max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], [window.get_size()[0] - max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], width=1)
+    pygame.draw.line(window, pygameColors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0]/2 - title_text_rect_obj.width - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
+    pygame.draw.line(window, pygameColors['white'], [window.get_size()[0]/2 + title_text_rect_obj.width + max(window.get_size())*margin, max(window.get_size())*margin], [window.get_size()[0] - max(window.get_size())*margin, max(window.get_size())*margin], width=1)
+    pygame.draw.line(window, pygameColors['white'], [max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], [window.get_size()[0] - max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], width=1)
     drawDiamond(window, pygameColors['white'], [max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
     drawDiamond(window, pygameColors['white'], [window.get_size()[0] - max(window.get_size())*margin, window.get_size()[1] - max(window.get_size())*margin], radius)
     drawDiamond(window, pygameColors['white'], [max(window.get_size())*margin, max(window.get_size())*margin], radius)
@@ -339,7 +378,7 @@ def drawBorders(window, title, margin, radius, color, outline_color=None):
 
 def drawMenu(window, players, addingPlayer=False):
     window.fill(pygameColors['white'])
-    gradientRect( window, (63, 72, 204), (0, 162, 232), pygameRect( 0, 0, *window.get_size() ) )
+    gradientRect( window, (63, 72, 204), (0, 162, 232), pygame.Rect( 0, 0, *window.get_size() ) )
 
     margin = 0.02
     radius = window.get_size()[0]/200
@@ -347,27 +386,27 @@ def drawMenu(window, players, addingPlayer=False):
     drawBorders(window, 'Darts', margin, radius, pygameColors['white'])
 
     play_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.2)
-    if len(players) > 0:
-        play_button_size = drawTextWithOutline(window, 'Play', int(window.get_size()[0]/30),
+    if len(players) > 1:
+        play_button_size = drawTextWithOutline(window, 'Play', int(window.get_size()[0]/20),
                                            play_text_rect_obj_center, pygameColors['white'], pygameColors['black'], 2)
     else:
-        play_button_size = drawTextWithOutline(window, 'Play', int(window.get_size()[0]/30),
+        play_button_size = drawTextWithOutline(window, 'Play', int(window.get_size()[0]/20),
                                            play_text_rect_obj_center, pygameColors['red'], None, 2)
 
     addPlayer_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.35)
     if len(players) < 6:
-        addPlayer_button_size = drawTextWithOutline(window, 'Add Player', int(window.get_size()[0]/30),
+        addPlayer_button_size = drawTextWithOutline(window, 'Add Player', int(window.get_size()[0]/20),
                                                 addPlayer_text_rect_obj_center, pygameColors['white'], pygameColors['black'], 2, not addingPlayer)
     else:
-        addPlayer_button_size = drawTextWithOutline(window, 'Add Player', int(window.get_size()[0]/30),
+        addPlayer_button_size = drawTextWithOutline(window, 'Add Player', int(window.get_size()[0]/20),
                                                 addPlayer_text_rect_obj_center, pygameColors['red'], pygameColors['red'], 2, not addingPlayer)
 
     settings_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.5)
-    settings_button_size = drawTextWithOutline(window, 'Settings', int(window.get_size()[0]/30),
+    settings_button_size = drawTextWithOutline(window, 'Settings', int(window.get_size()[0]/20),
                                        settings_text_rect_obj_center, pygameColors['white'], pygameColors['black'], 2)
 
     quit_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.8)
-    quit_button_size = drawTextWithOutline(window, 'Quit', int(window.get_size()[0]/30),
+    quit_button_size = drawTextWithOutline(window, 'Quit', int(window.get_size()[0]/20),
                                        quit_text_rect_obj_center, pygameColors['white'], pygameColors['black'], 2)
 
     playerColors = [pygameColors['red'], pygameColors['blue'], pygameColors['green'], pygameColors['yellow'], pygameColors['cyan'], pygameColors['orange']]
@@ -379,18 +418,16 @@ def drawMenu(window, players, addingPlayer=False):
         crossRadius = window.get_size()[0]/100
         crossDims.append([crossCentre, crossRadius])
 
-    pygameDisplayFlip()
-
     return [play_button_size, play_text_rect_obj_center, addPlayer_button_size, addPlayer_text_rect_obj_center,
             settings_button_size, settings_text_rect_obj_center, quit_button_size, quit_text_rect_obj_center,
             crossDims]
 
 def addPlayer(window, addPlayer_button_size, players):
-    font = pygameFontFont(None, int(window.get_size()[0]/30))
-    clock = pygameTimeClock()
-    width, height = addPlayer_button_size
+    font = pygame.font.SysFont('system', int(window.get_size()[0]/20))
+    clock = pygame.time.Clock()
+    width, height = addPlayer_button_size[0], addPlayer_button_size[1]*1.25
     input_box_centre = (window.get_size()[0]/2, window.get_size()[1]*0.35)
-    input_box = pygameRect(*input_box_centre, width, height)
+    input_box = pygame.Rect(*input_box_centre, width, height)
     input_box.center = input_box_centre
     color_inactive = pygameColors['grey59']
     color_active = pygameColors['white']
@@ -398,23 +435,23 @@ def addPlayer(window, addPlayer_button_size, players):
     active = True
     text = ''
     while True:
-        for event in pygameEventGet():
-            if event.type == pygameQuit:
-                pygameQuit()
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
                 return
-            if event.type == pygameMOUSEBUTTONDOWN:
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 if input_box.collidepoint(event.pos):
                     active = not active
                 else:
                     active = False
                 color = color_active if active else color_inactive
-            if event.type == pygameKEYDOWN:
-                if event.key == pygameK_ESCAPE:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
                     return []
                 if active:
-                    if event.key == pygameK_RETURN:
+                    if event.key == pygame.K_RETURN:
                         return [text]
-                    elif event.key == pygameK_BACKSPACE:
+                    elif event.key == pygame.K_BACKSPACE:
                         text = text[:-1]
                     else:
                         text += event.unicode
@@ -425,14 +462,14 @@ def addPlayer(window, addPlayer_button_size, players):
         input_box.w = width
         input_box.center = input_box_centre
         window.blit(txt_surface, (input_box.x+5, input_box.y+5))
-        pygameDrawRect(window, color, input_box, 2)
+        pygame.draw.rect(window, color, input_box, 2)
 
-        pygameDisplayFlip()
+        pygame.display.flip()
         clock.tick(30)
 
 def drawGameMenu(window, players):
     window.fill([255,255,255])
-    gradientRect( window, (0, 204, 51), (0, 255, 128), pygameRect( 0, 0, *window.get_size() ) )
+    gradientRect( window, (0, 204, 51), (0, 255, 128), pygame.Rect( 0, 0, *window.get_size() ) )
 
     margin = 0.02
     radius = window.get_size()[0]/200
@@ -440,15 +477,15 @@ def drawGameMenu(window, players):
     drawBorders(window, 'Play', margin, radius, pygameColors['white'])
 
     demolition_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.2)
-    demolition_button_size = drawTextWithOutline(window, 'Demolition', int(window.get_size()[0]/30),
+    demolition_button_size = drawTextWithOutline(window, 'Demolition', int(window.get_size()[0]/20),
                                              demolition_text_rect_obj_center, pygameColors['white'], pygameColors['black'], 2)
 
     killer_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.35)
-    killer_button_size = drawTextWithOutline(window, 'Killer', int(window.get_size()[0]/30),
+    killer_button_size = drawTextWithOutline(window, 'Killer', int(window.get_size()[0]/20),
                                          killer_text_rect_obj_center, pygameColors['white'], pygameColors['black'], 2)
 
     back_text_rect_obj_center = (window.get_size()[0]/2, window.get_size()[1]*0.8)
-    back_button_size = drawTextWithOutline(window, 'Back', int(window.get_size()[0]/30),
+    back_button_size = drawTextWithOutline(window, 'Back', int(window.get_size()[0]/20),
                                        back_text_rect_obj_center, pygameColors['white'], pygameColors['black'], 2)
 
     playerColors = [pygameColors['red'], pygameColors['blue'], pygameColors['green'], pygameColors['yellow'], pygameColors['cyan'], pygameColors['orange']]
@@ -456,14 +493,12 @@ def drawGameMenu(window, players):
        profilePicture(window, [(5*(i%2 != 0) + (i%2 == 0))*window.get_size()[0]/6, (i//2 + 1)*window.get_size()[1]/4],
                       playerColors[i], players[i], i)
 
-    pygameDisplayFlip()
-
     return [demolition_button_size, demolition_text_rect_obj_center, killer_button_size, killer_text_rect_obj_center,
             back_button_size, back_text_rect_obj_center]
 
 def drawSettingsMenu(window, curr_resolution, resLeftHover, resRightHover):
     window.fill(pygameColors['white'])
-    gradientRect( window, (80, 80, 80), (180, 180, 180), pygameRect( 0, 0, *window.get_size() ) )
+    gradientRect( window, (80, 80, 80), (180, 180, 180), pygame.Rect( 0, 0, *window.get_size() ) )
 
     margin = 0.02
     radius = window.get_size()[0]/200
@@ -471,46 +506,44 @@ def drawSettingsMenu(window, curr_resolution, resLeftHover, resRightHover):
 
     drawBorders(window, 'Settings', margin, radius, pygameColors['white'])
 
-    font = pygameFontFont('freesansbold.ttf', int(window.get_size()[0]/30))
+    font = pygame.font.SysFont('system', int(window.get_size()[0]/20))
     resolution_text_surface_obj = font.render('Display Resolution', True, pygameColors['white']).convert_alpha()
     resolution_text_rect_obj_center = (window.get_size()[0]/2 - resolution_text_surface_obj.get_rect().w/2 - centre_margin,
                                        window.get_size()[1]*0.2)
-    drawTextWithOutline(window, 'Display Resolution', int(window.get_size()[0]/30),
+    drawTextWithOutline(window, 'Display Resolution', int(window.get_size()[0]/20),
                                            resolution_text_rect_obj_center, pygameColors['white'], pygameColors['black'], 2)
 
     buttons = drawArrowSelector(window, [window.get_size()[0]/2 + (window.get_size()[0]/3)/2 + centre_margin,
-                                         window.get_size()[1]*0.2], int(window.get_size()[0]/30),
+                                         window.get_size()[1]*0.2], int(window.get_size()[0]/20),
                                 window.get_size()[0]/3, curr_resolution, pygameColors['white'], pygameColors['black'],
                                 resLeftHover, resRightHover)
     leftButton_center, leftButton_button_size = buttons[0], buttons[1]
     rightButton_center, rightButton_button_size = buttons[2], buttons[3]
 
-    font = pygameFontFont('freesansbold.ttf', int(window.get_size()[0]/30))
+    font = pygame.font.SysFont('system', int(window.get_size()[0]/20))
     back_text_surface_obj = font.render('Back', True, pygameColors['white']).convert_alpha()
     back_text_rect_obj_center = (window.get_size()[0]/2 - back_text_surface_obj.get_rect().w/2 - centre_margin,
                                        window.get_size()[1]*0.8)
-    back_button_size = drawTextWithOutline(window, 'Back', int(window.get_size()[0]/30),
+    back_button_size = drawTextWithOutline(window, 'Back', int(window.get_size()[0]/20),
                                        back_text_rect_obj_center, pygameColors['white'], pygameColors['black'], 2)
 
-    font = pygameFontFont('freesansbold.ttf', int(window.get_size()[0]/30))
+    font = pygame.font.SysFont('system', int(window.get_size()[0]/20))
     apply_text_surface_obj = font.render('Apply', True, pygameColors['white']).convert_alpha()
     apply_text_rect_obj_center = (window.get_size()[0]/2 + apply_text_surface_obj.get_rect().w/2 + centre_margin,
                                        window.get_size()[1]*0.8)
-    apply_button_size = drawTextWithOutline(window, 'Apply', int(window.get_size()[0]/30),
+    apply_button_size = drawTextWithOutline(window, 'Apply', int(window.get_size()[0]/20),
                                        apply_text_rect_obj_center, pygameColors['white'], pygameColors['black'], 2)
-
-    pygameDisplayFlip()
 
     return [leftButton_center, leftButton_button_size, rightButton_center, rightButton_button_size,
             back_button_size, back_text_rect_obj_center, apply_button_size, apply_text_rect_obj_center]
 
 def drawSegment(window, centre, outer_radius, inner_radius, start_angle, end_angle, color):
-    bounding_rect  = pygameSurface((2*(2**0.5)*outer_radius, 2*(2**0.5)*outer_radius), pygameSRCALPHA)
+    bounding_rect  = pygame.Surface((2*(2**0.5)*outer_radius, 2*(2**0.5)*outer_radius), pygame.SRCALPHA)
     bounding_rect.fill((0, 0, 0, 0))
 
     return_pos = [centre[i] - (2**0.5)*outer_radius for i in range(2)]
 
-    pygameDrawCircle(bounding_rect, color, [bounding_rect.get_size()[i]/2 for i in [0, 1]], outer_radius)
+    pygame.draw.circle(bounding_rect, color, [bounding_rect.get_size()[i]/2 for i in [0, 1]], outer_radius)
 
     if end_angle - start_angle < pi/2:
         centre_angle = (end_angle + start_angle)/2
@@ -519,10 +552,10 @@ def drawSegment(window, centre, outer_radius, inner_radius, start_angle, end_ang
             x = bounding_rect.get_size()[0]/2 + outer_radius*(2**0.5)*sin(centre_angle+offset)
             y = bounding_rect.get_size()[1]/2 - outer_radius*(2**0.5)*cos(centre_angle+offset)
             points.append([x, y])
-        pygameDrawPolygon(bounding_rect, (0, 0, 0, 0), points)
-        pygameDrawCircle(bounding_rect, (0, 0, 0, 0), [bounding_rect.get_size()[i]/2 for i in [0, 1]], inner_radius)
+        pygame.draw.polygon(bounding_rect, (0, 0, 0, 0), points)
+        pygame.draw.circle(bounding_rect, (0, 0, 0, 0), [bounding_rect.get_size()[i]/2 for i in [0, 1]], inner_radius)
 
-    window.blit(bounding_rect, return_pos, special_flags=pygameBLEND_RGBA_MAX)
+    window.blit(bounding_rect, return_pos, special_flags=pygame.BLEND_RGBA_MAX)
 
 def drawJaggedArc(window, centre, radius, color, width, start_angle, end_angle, jag_width, jag_num):
     points = []
@@ -532,7 +565,7 @@ def drawJaggedArc(window, centre, radius, color, width, start_angle, end_angle, 
         x = centre[0] + radius*sin(curr_angle) + (((-1)**n)*random()*jag_width*radius)
         y = centre[1] - radius*cos(curr_angle) - (((-1)**n)*random()*jag_width*radius)
         points.append([x, y])
-    pygameDrawLines(window, color, False, points, width)
+    pygame.draw.lines(window, color, False, points, width)
 
     return points
 
@@ -545,7 +578,7 @@ def generateJaggedArc(centre, radius, start_angle, end_angle, jag_width, jag_num
             x = centre[0] + radius*sin(curr_angle)
             y = centre[1] - radius*cos(curr_angle)
             x += (((-1)**(x > centre[0]))*((-1)**n)*random()*jag_width*radius)
-            y -= (((-1)**(y > centre[1]))*((-1)**n)*random()*jag_width*radius)
+            y += (((-1)**(y > centre[1]))*((-1)**n)*random()*jag_width*radius)
             points.append([x, y])
         points.append(fix_startandend[1])
 
@@ -579,7 +612,7 @@ def generateJaggedArcsFixed(centre, outer_radius, inner_radius, start_angle, end
     return [fixed_points_inner, fixed_points_1_3, fixed_points_2_3, fixed_points_outer]
 
 def drawSplitSegment(window, centre, outer_radius, inner_radius, start_angle, end_angle, on_colors, off_colors,
-                     split_color, split_width, jag_width, jag_num, fixed):
+                     split_color, split_width, jag_width, jag_num, fixed, specialSegmentRadius=False):
 
     if on_colors[0]:
         points_inner = generateJaggedArc(centre, inner_radius, start_angle, end_angle, 0, 2)
@@ -626,50 +659,82 @@ def drawSplitSegment(window, centre, outer_radius, inner_radius, start_angle, en
                                           [centre[0] + outer_radius*sin(end_angle),
                                             centre[1] - outer_radius*cos(end_angle)]])
 
-    if on_colors[0]:
-        pygameDrawPolygon(window, on_colors[0], points_1_3_in + points_inner[::-1])
+    if specialSegmentRadius:
+        if on_colors[2]:
+            pygame.draw.polygon(window, on_colors[0], points_1_3_in + points_inner[::-1])
+            pygame.draw.polygon(window, on_colors[1], points_2_3_in + points_1_3_out[::-1])
+            pygame.draw.polygon(window, off_colors[2], points_outer + points_2_3_out[::-1])
+            points_special = generateJaggedArc(centre, specialSegmentRadius, start_angle, end_angle, jag_width, jag_num,
+                                               [[centre[0] + specialSegmentRadius*sin(start_angle),
+                                                 centre[1] - specialSegmentRadius*cos(start_angle)],
+                                                [centre[0] + specialSegmentRadius*sin(end_angle),
+                                                 centre[1] - specialSegmentRadius*cos(end_angle)]])
+            pygame.draw.polygon(window, on_colors[2], points_special + points_inner[::-1])
+        elif on_colors[1]:
+            pygame.draw.polygon(window, on_colors[0], points_1_3_in + points_2_3_out[::-1])
+            pygame.draw.polygon(window, off_colors[1], fixed[2] + fixed[1][::-1])
+            pygame.draw.polygon(window, off_colors[2], fixed[3] + fixed[2][::-1])
+            points_special = generateJaggedArc(centre, specialSegmentRadius, start_angle, end_angle, jag_width, jag_num,
+                                               [[centre[0] + specialSegmentRadius*sin(start_angle),
+                                                 centre[1] - specialSegmentRadius*cos(start_angle)],
+                                                [centre[0] + specialSegmentRadius*sin(end_angle),
+                                                 centre[1] - specialSegmentRadius*cos(end_angle)]])
+            pygame.draw.polygon(window, on_colors[1], points_special + points_1_3_out[::-1])
+        else:
+            pygame.draw.polygon(window, off_colors[0], fixed[1] + fixed[0][::-1])
+            pygame.draw.polygon(window, off_colors[1], fixed[2] + fixed[1][::-1])
+            pygame.draw.polygon(window, off_colors[2], fixed[3] + fixed[2][::-1])
+            points_special = generateJaggedArc(centre, specialSegmentRadius, start_angle, end_angle, jag_width, jag_num,
+                                               [[centre[0] + specialSegmentRadius*sin(start_angle),
+                                                 centre[1] - specialSegmentRadius*cos(start_angle)],
+                                                [centre[0] + specialSegmentRadius*sin(end_angle),
+                                                 centre[1] - specialSegmentRadius*cos(end_angle)]])
+            pygame.draw.polygon(window, on_colors[0], points_special + points_inner[::-1])
     else:
-        pygameDrawPolygon(window, off_colors[0], fixed[1] + fixed[0][::-1])
+        if on_colors[0]:
+            pygame.draw.polygon(window, on_colors[0], points_1_3_in + points_inner[::-1])
+        else:
+            pygame.draw.polygon(window, off_colors[0], fixed[1] + fixed[0][::-1])
+
+        if on_colors[1]:
+            pygame.draw.polygon(window, on_colors[1], points_2_3_in + points_1_3_out[::-1])
+        else:
+            pygame.draw.polygon(window, off_colors[1], fixed[2] + fixed[1][::-1])
+
+        if on_colors[2]:
+            pygame.draw.polygon(window, on_colors[2], points_outer + points_2_3_out[::-1])
+        else:
+            pygame.draw.polygon(window, off_colors[2], fixed[3] + fixed[2][::-1])
+
+    if on_colors[0]:
+        pygame.draw.lines(window, split_color, False, points_inner, split_width)
+        pygame.draw.lines(window, split_color, False, points_1_3_in, split_width)
+    else:
+        pygame.draw.lines(window, split_color, False, fixed[0], split_width)
+        pygame.draw.lines(window, split_color, False, fixed[1], split_width)
 
     if on_colors[1]:
-        pygameDrawPolygon(window, on_colors[1], points_2_3_in + points_1_3_out[::-1])
+        pygame.draw.lines(window, split_color, False, points_2_3_in, split_width)
     else:
-        pygameDrawPolygon(window, off_colors[1], fixed[2] + fixed[1][::-1])
+        pygame.draw.lines(window, split_color, False, fixed[2], split_width)
 
     if on_colors[2]:
-        pygameDrawPolygon(window, on_colors[2], points_outer + points_2_3_out[::-1])
+        pygame.draw.lines(window, split_color, False, points_outer, split_width)
     else:
-        pygameDrawPolygon(window, off_colors[2], fixed[3] + fixed[2][::-1])
+        pygame.draw.lines(window, split_color, False, fixed[3], split_width)
 
-    if on_colors[0]:
-        pygameDrawLines(window, split_color, False, points_inner, split_width)
-        pygameDrawLines(window, split_color, False, points_1_3_in, split_width)
-    else:
-        pygameDrawLines(window, split_color, False, fixed[0], split_width)
-        pygameDrawLines(window, split_color, False, fixed[1], split_width)
-
-    if on_colors[1]:
-        pygameDrawLines(window, split_color, False, points_2_3_in, split_width)
-    else:
-        pygameDrawLines(window, split_color, False, fixed[2], split_width)
-
-    if on_colors[2]:
-        pygameDrawLines(window, split_color, False, points_outer, split_width)
-    else:
-        pygameDrawLines(window, split_color, False, fixed[3], split_width)
-
-    pygameDrawLines(window, split_color, False, [points_inner[0], points_1_3_in[0], points_1_3_out[0],
+    pygame.draw.lines(window, split_color, False, [points_inner[0], points_1_3_in[0], points_1_3_out[0],
                                                  points_2_3_in[0], points_2_3_out[0], points_outer[0]], split_width)
-    pygameDrawLines(window, split_color, False, [points_inner[-1], points_1_3_in[-1], points_1_3_out[-1],
+    pygame.draw.lines(window, split_color, False, [points_inner[-1], points_1_3_in[-1], points_1_3_out[-1],
                                                  points_2_3_in[-1], points_2_3_out[-1], points_outer[-1]], split_width)
 
 def drawSegmentTest(n):
-    pygameInit()
+    pygame.init()
     
     FPS = 30 #frames per second setting
-    fpsClock = pygameTimeClock()
+    fpsClock = pygame.time.Clock()
 
-    info = pygameDisplayInfo()
+    info = pygame.display.Info()
 
     # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
     # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren']
@@ -679,8 +744,8 @@ def drawSegmentTest(n):
     # players = ['Josh']
     # players = []
 
-    window = pygameDisplaySet_mode((info.current_w, (info.current_h-60)))
-    gradientRect( window, (136/5, 0, 21/5), (240, 0, 36), pygameRect( 0, 0, *window.get_size() ) )
+    window = pygame.display.set_mode((info.current_w, (info.current_h-60)))
+    gradientRect( window, (136/5, 0, 21/5), (240, 0, 36), pygame.Rect( 0, 0, *window.get_size() ) )
 
     drawDartBoard(window, [window.get_size()[i]/2 for i in [0, 1]], window.get_size()[1]*0.3, pygameColors['white'])
 
@@ -690,11 +755,11 @@ def drawSegmentTest(n):
     fixed = generateJaggedArcsFixed(centre, outer_radius, inner_radius, start_angle, end_angle, jag_width, jag_num)
 
     while True:
-        x, y = pygameMouseGet_pos()
-        pygameDisplaySet_caption('{}, {}'.format(x, y))
+        x, y = pygame.mouse.get_pos()
+        pygame.display.set_caption('{}, {}'.format(x, y))
 
         window.fill(pygameColors['white'])
-        gradientRect( window, (136/5, 0, 21/5), (240, 0, 36), pygameRect( 0, 0, *window.get_size() ) )
+        gradientRect( window, (136/5, 0, 21/5), (240, 0, 36), pygame.Rect( 0, 0, *window.get_size() ) )
         drawDartBoard(window, [window.get_size()[i]/2 for i in [0, 1]], window.get_size()[1]*0.3, pygameColors['white'])
 
         if n == 0:
@@ -708,22 +773,22 @@ def drawSegmentTest(n):
         drawSplitSegment(window, centre, outer_radius, inner_radius, start_angle, end_angle, colors,
                          [pygameColors['darkred']]*3, pygameColors['black'], 5, jag_width, jag_num, fixed)
 
-        pygameDisplayFlip()
+        pygame.display.flip()
 
         fpsClock.tick(FPS)
-        for event in pygameEventGet():
-            if event.type == pygameLocalsQUIT:
-                pygameQuit()
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
                 return
 
 def drawDartBoard(window, centre, radius, color, width=3):
 
-    pygameDrawCircle(window, color, centre, radius, width)
-    pygameDrawCircle(window, color, centre, radius*(162/170), width)
-    pygameDrawCircle(window, color, centre, radius*(107/170), width)
-    pygameDrawCircle(window, color, centre, radius*(99/170), width)
-    pygameDrawCircle(window, color, centre, radius*(16/170), width)
-    pygameDrawCircle(window, color, centre, radius*(6.35/170), width)
+    pygame.draw.circle(window, color, centre, radius, width)
+    pygame.draw.circle(window, color, centre, radius*(162/170), width)
+    pygame.draw.circle(window, color, centre, radius*(107/170), width)
+    pygame.draw.circle(window, color, centre, radius*(99/170), width)
+    pygame.draw.circle(window, color, centre, radius*(16/170), width)
+    pygame.draw.circle(window, color, centre, radius*(6.35/170), width)
 
     for angle in range(20):
         inner_x = centre[0] + radius*(16/170)*sin(((angle+0.5)/20)*2*pi)
@@ -734,7 +799,7 @@ def drawDartBoard(window, centre, radius, color, width=3):
         inner_y += (-1)**(inner_y > centre[1])
         outer_x += (-1)**(outer_x > centre[0])
         outer_y += (-1)**(outer_y > centre[1])
-        pygameDrawLine(window, color, (inner_x, inner_y), (outer_x, outer_y), width)
+        pygame.draw.line(window, color, (inner_x, inner_y), (outer_x, outer_y), width)
 
 def dartBoardAngles(n):
     starts = [0.5, 7.5, 9.5, 2.5, 18.5, 4.5, 11.5, 13.5, 16.5, 5.5,
@@ -747,36 +812,36 @@ def cartesianFromPolar(centre, radius, angle):
     return [x, y]
 
 def drawRoundMarker(window, centre, height, roundNum):
-    drawTextWithOutline(window, 'ROUND', int(window.get_size()[0]/60), [centre[0], centre[1] - height],
+    drawTextWithOutline(window, 'ROUND', int(window.get_size()[0]/45), [centre[0], centre[1] - height],
                         pygameColors['white'])
     for i in range(1, 7)[::-1]:
         if roundNum < 7 and 7-i == roundNum:
-            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] - (i*height)/7],
+            pygame.draw.circle(window, pygameColors['white'], [centre[0], centre[1] - (i*height)/7],
                              window.get_size()[0]/200)
         else:
-            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] - (i*height)/7],
+            pygame.draw.circle(window, pygameColors['white'], [centre[0], centre[1] - (i*height)/7],
                              window.get_size()[0]/200, width=1)
-    drawTextWithOutline(window, '-×2-', int(window.get_size()[0]/60), [centre[0], centre[1]], pygameColors['white'])
+    drawTextWithOutline(window, '-×2-', int(window.get_size()[0]/45), [centre[0], centre[1]], pygameColors['white'])
     for i in range(1, 4):
         if roundNum >= 7 and i+6 == roundNum:
-            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
+            pygame.draw.circle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
                              window.get_size()[0]/200)
         else:
-            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
+            pygame.draw.circle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
                              window.get_size()[0]/200, width=1)
-    drawTextWithOutline(window, '-×3-', int(window.get_size()[0]/60), [centre[0], centre[1] + (4*height)/7],
+    drawTextWithOutline(window, '-×3-', int(window.get_size()[0]/45), [centre[0], centre[1] + (4*height)/7],
                         pygameColors['white'])
     for i in range(5, 8)[::-1]:
         if roundNum >= 7 and i+5 == roundNum:
-            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
+            pygame.draw.circle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
                              window.get_size()[0]/200)
         else:
-            pygameDrawCircle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
+            pygame.draw.circle(window, pygameColors['white'], [centre[0], centre[1] + (i*height)/7],
                              window.get_size()[0]/200, width=1)
 
-
-def drawKiller(window, player, turn, players, positions, segments, roundNum, fixed, dartBoardRadius):
-    gradientRect( window, (136/5, 0, 21/5), (240, 0, 36), pygameRect( 0, 0, *window.get_size() ) )
+def drawKiller(window, player, turn, players, positions, segments, roundNum, fixed, dartBoardRadius,
+               specialSegmentRadius=False):
+    gradientRect( window, (136/5, 0, 21/5), (240, 0, 36), pygame.Rect( 0, 0, *window.get_size() ) )
     segment_colors = [pygameColors['red'], pygameColors['blue'], pygameColors['green'], pygameColors['yellow'], pygameColors['cyan'], pygameColors['orange']]
     segment_offcolors = [[j/2.5 for j in i] for i in segment_colors]
 
@@ -785,19 +850,25 @@ def drawKiller(window, player, turn, players, positions, segments, roundNum, fix
 
     for i in range(len(players)):
         angles = dartBoardAngles(positions[i])
-        drawSplitSegment(window, centre, dartBoardRadius, dartBoardRadius*(16/170),
-                         *angles, [segment_colors[i]]*segments[i] + [False]*(3-segments[i]),
-                         [segment_offcolors[i]]*3, pygameColors['black'], 5, segments[i]*0.01, 10, fixed[i])
+        if specialSegmentRadius and i == specialSegmentRadius[0]:
+            drawSplitSegment(window, centre, dartBoardRadius, dartBoardRadius*(16/170),
+                             *angles, [segment_colors[i]]*segments[i] + [False]*(3-segments[i]),
+                             [segment_offcolors[i]]*3, pygameColors['black'], 5, segments[i]*0.01, 10, fixed[i],
+                             specialSegmentRadius[1])
+        else:
+            drawSplitSegment(window, centre, dartBoardRadius, dartBoardRadius*(16/170),
+                             *angles, [segment_colors[i]]*segments[i] + [False]*(3-segments[i]),
+                             [segment_offcolors[i]]*3, pygameColors['black'], 5, segments[i]*0.01, 10, fixed[i])
         if segments[i] == 3:
             skullCentre = cartesianFromPolar(centre, dartBoardRadius*0.85, sum(angles)/2)
-            skullImage_original  = pygameImageLoad('KillerSkull.png').convert()
-            skullImage = pygameTransformScale(skullImage_original, [skullImage_original.get_size()[i]*(dartBoardRadius*0.2/skullImage_original.get_size()[0]) for i in range(2)])
-            skullImage_rotated = pygameTransformRotate(skullImage, -(sum(angles)/2)*(180/pi))
+            skullImage_original  = pygame.image.load('KillerSkull.png').convert()
+            skullImage = pygame.transform.scale(skullImage_original, [skullImage_original.get_size()[i]*(dartBoardRadius*0.2/skullImage_original.get_size()[0]) for i in range(2)])
+            skullImage_rotated = pygame.transform.rotate(skullImage, -(sum(angles)/2)*(180/pi))
             new_rect = skullImage_rotated.get_rect(center = skullCentre)
-            window.blit(skullImage_rotated, new_rect, special_flags=pygameBLEND_RGBA_MIN)
+            window.blit(skullImage_rotated, new_rect, special_flags=pygame.BLEND_RGBA_MIN)
 
         textCentre = cartesianFromPolar(centre, dartBoardRadius*1.2, sum(angles)/2)
-        drawTextWithOutline(window, str(positions[i]), int(window.get_size()[0]/40), textCentre, segment_colors[i],
+        drawTextWithOutline(window, str(positions[i]), int(window.get_size()[0]/30), textCentre, segment_colors[i],
                             pygameColors['black'], 2)
         if positions[i] == 20:
             picture_x = textCentre[0] + ((-1)**(textCentre[0] < centre[0]))*dartBoardRadius*0.5
@@ -817,15 +888,44 @@ def drawKiller(window, player, turn, players, positions, segments, roundNum, fix
     drawRoundMarker(window, [window.get_size()[0]*0.95, centre[1]], window.get_size()[1]*0.25, roundNum)
     drawBorders(window, 'Killer', 0.02, window.get_size()[0]/200, pygameColors['white'])
 
-def drawKillerTest():
-    pygameInit()
-    
-    FPS = 30 #frames per second setting
-    fpsClock = pygameTimeClock()
+def updateKiller(window, player, turn, players, positions, segments, roundNum, fixed, dartBoardRadius, direction,
+                 fpsClock, FPS):
+    if segments[players.index(player)] == 0:
+        radius = dartBoardRadius*(16/170)
+        finalRadius = dartBoardRadius*((segments[players.index(player)] + direction)/3)
+    elif segments[players.index(player)] == 1 and direction == -1:
+        radius = dartBoardRadius*(segments[players.index(player)]/3)
+        finalRadius = dartBoardRadius*(16/170)
+    else:
+        radius = dartBoardRadius*(segments[players.index(player)]/3)
+        finalRadius = dartBoardRadius*((segments[players.index(player)] + direction)/3)
 
-    info = pygameDisplayInfo()
+    dradius = abs(finalRadius - radius)
+
+    while (direction == 1 and radius < finalRadius) or (direction == -1 and radius > finalRadius):
+
+        radius += direction*(dradius/(FPS*2))
+
+        drawKiller(window, player, turn, players, positions, segments, roundNum, fixed, dartBoardRadius,
+                   [players.index(player), radius])
+
+        pygame.display.flip()
+
+        fpsClock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                return
+
+def drawKillerTest(window, _):
+    
+    FPS = 120 #frames per second setting
+    fpsClock = pygame.time.Clock()
+
+    info = pygame.display.Info()
 
     players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Lauren', 'Izzy']
+    # players = ['Josh', 'Ben', 'Luke', 'Rachel', 'Liv', 'Rosie']
     positions = [9, 17, 7, 20, 18, 10]
     segments = [3, 1, 0, 2, 3, 1]
     # segments = [3, 3, 3, 3, 3, 3]
@@ -838,7 +938,6 @@ def drawKillerTest():
     
     osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
     fullscreen = False
-    window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
 
     dartBoardRadius = window.get_size()[1]*0.3
 
@@ -848,36 +947,48 @@ def drawKillerTest():
                                              dartBoardRadius*(16/170), *dartBoardAngles(positions[i]),
                                              0.02, 10))
 
+    specialRadius, direction = dartBoardRadius*(107/170), 1
+
+    numFrames, frameCheck = 0, time.time()
+
     while True:
-        x, y = pygameMouseGet_pos()
-        pygameDisplaySet_caption('Darts - Killer')
+        if specialRadius >= dartBoardRadius*1.03:
+            direction = -1
+        elif specialRadius <= dartBoardRadius*(107/170):
+            direction = 1
+        specialRadius += direction*((dartBoardRadius*(1.03 - (107/170)))/(FPS*2))
 
-        drawKiller(window, players[0], 0, players, positions, segments, 5, fixed, dartBoardRadius)
+        drawKiller(window, players[0], 0, players, positions, segments, 5, fixed, dartBoardRadius, [4, specialRadius])
 
-        pygameDisplayFlip()
+        pygame.display.flip()
 
         fpsClock.tick(FPS)
-        for event in pygameEventGet():
-            if event.type == pygameLocalsQUIT:
-                pygameQuit()
+        numFrames += 1
+        if time.time() - frameCheck > 1:
+            pygame.display.set_caption('Darts - Killer - {0} fps'.format(numFrames))
+            numFrames, frameCheck = 0, time.time()
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
                 return
 
-            elif event.type == pygameKEYDOWN:
-                if event.key == pygameK_F11:
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_F11:
                     if fullscreen:
-                        pygameDisplayQuit()
+                        pygame.display.quit()
                         osEnviron['SDL_VIDEO_WINDOW_POS'] = maximised_pos
-                        pygameDisplayInit()
-                        window = pygameDisplaySet_mode(maximised_res, pygameRESIZABLE)
+                        pygame.display.init()
+                        window = pygame.display.set_mode(maximised_res, pygame.RESIZABLE)
                     else:
-                        pygameDisplayQuit()
+                        pygame.display.quit()
                         osEnviron['SDL_VIDEO_WINDOW_POS'] = "0,0"
-                        pygameDisplayInit()
-                        window = pygameDisplaySet_mode((info.current_w, info.current_h), pygameRESIZABLE)
+                        pygame.display.init()
+                        window = pygame.display.set_mode((info.current_w, info.current_h), pygame.RESIZABLE)
                     fullscreen = not fullscreen
 
-            elif event.type == pygameVIDEORESIZE:
-                window = pygameDisplaySet_mode((event.w, event.h), pygameRESIZABLE)
+            elif event.type == pygame.VIDEORESIZE:
+                window = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
                 dartBoardRadius = window.get_size()[1]*0.35
             
@@ -886,3 +997,35 @@ def drawKillerTest():
                     fixed.append(generateJaggedArcsFixed([window.get_size()[i]/2 for i in [0, 1]], dartBoardRadius,
                                                          dartBoardRadius*(16/170), *dartBoardAngles(positions[i]),
                                                          0.02, 10))
+
+def threadingTest():
+    global stop_threads
+    
+    def background():
+        while True:
+            time.sleep(3)
+            print('disarm me by typing disarm')
+            if stop_threads:
+                break
+
+
+    def other_function():
+        print('You disarmed me! Dying now.')
+
+    # now threading1 runs regardless of user input
+    stop_threads = False
+    threading1 = threading.Thread(target=background)
+    threading1.daemon = True
+    threading1.start()
+    
+    while True:
+        if input() == 'disarm':
+            stop_threads = True
+            threading1.join()
+            other_function()
+            break
+        else:
+            print('not disarmed')
+
+
+

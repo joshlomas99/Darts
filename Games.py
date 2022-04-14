@@ -1,7 +1,5 @@
 from random import shuffle, randint
-from pygame import quit as pygameQuit
-from pygame.time import Clock as pygameTimeClock
-from pygame.event import get as pygameEventGet
+import pygame
 from pygame.locals import QUIT
 from pygameGUIs import updateScoreDemolition, drawDemolition
 
@@ -9,7 +7,9 @@ class InvalidScore(Exception):
     pass
 
 def Score(scoreIn, useMultiplier=True):
-    if scoreIn[-1] == 'D':
+    if scoreIn == '':
+        return False
+    elif scoreIn[-1] == 'D':
         if any(char.isalpha() for char in scoreIn[:-1]):
             print(f'Invalid score: {scoreIn[:-1]}')
             return False
@@ -34,10 +34,12 @@ def Score(scoreIn, useMultiplier=True):
         return False
 
 class Demolition:
-    def __init__(self, window, players, target=180):
+    def __init__(self, window, players, fpsClock, FPS, target=180):
         self.window = window
         self.players = players
         self.scores = [target]*len(players)
+        self.fpsClock = fpsClock
+        self.FPS = FPS
         # os.environ['SDL_VIDEO_WINDOW_POS'] = "768,216"
 
     def shot(self, player, turnNum):
@@ -70,10 +72,10 @@ class Demolition:
         player = 0
         gameOver = False
         while not gameOver:
-            pygameTimeClock().tick(30)
-            for event in pygameEventGet():
+            self.fpsClock.tick(self.FPS)
+            for event in pygame.event.get():
                 if event.type == QUIT:
-                    pygameQuit()
+                    pygame.quit()
                     return
             gameOver = self.turn(self.players[player])
             player += 1
@@ -83,7 +85,7 @@ class Demolition:
         return
 
 class Killer:
-    def __init__(self, window, players, max_round=12):
+    def __init__(self, window, players, fpsClock, FPS, max_round=12):
         self.window = window
         self.players = players
         self.segments = [0]*len(players)
@@ -136,10 +138,10 @@ class Killer:
         while not gameOver and Round <= self.max_round:
             if player == 0:
                 print('#############\nRound {0}     #\n#############'.format(Round))
-            # pygameTimeClock().tick(30)
-            # for event in pygameEventGet():
+            # pygame.time.Clock().tick(30)
+            # for event in pygame.event.get():
             #     if event.type == QUIT:
-            #         pygameQuit()
+            #         pygame.quit()
             #         return
             gameOver = self.turn(self.players[player], multiplier)
             player += 1
